@@ -35,7 +35,23 @@ THIS TRANSMISSION WILL REPEAT UNTIL TERMINATION.
 
 ---
 
-## 🌌 Thematic Pillars
+## 🎬 Visual Showcase & Preview
+
+![NOIR Analog Horror Preview](screenshots/noir_preview.gif)
+
+> *Featuring authentic 1994 EAS broadcast headers, real-time CRT barrel distortion, horizontal tracking tearing, stickman Gregor Samsa arachnid metamorphosis, and the surreal Courage the Cowardly Dog Nowhere farmhouse.*
+
+---
+
+## 🖼️ Milestone Visual Gallery
+
+| Scene 01 — Emergency Action Notification (EAN) | Scene 02 — The Nowhere Farmhouse & Windmill |
+|:---:|:---:|
+| <img src="screenshots/01_eas_alert.jpg" width="400" /> | <img src="screenshots/02_nowhere_farmhouse.jpg" width="400" /> |
+| **Scene 03 — Kafka's Chitinous Metamorphosis** | **Scene 04 — The Surreal Nowhere Cat on Fence** |
+| <img src="screenshots/03_kafka_metamorphosis.jpg" width="400" /> | <img src="screenshots/04_surreal_cat_neck.jpg" width="400" /> |
+
+---
 
 ```
                      ┌──────────────────────────────────────────────┐
