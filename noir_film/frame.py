@@ -1,6 +1,7 @@
 """
-Frame compositor for PROJECT NOIR.
-Composites background plates, procedural surreal actors, and analog horror CRT shaders.
+Master frame compositor for PROJECT NOIR (Bengali / Indian Analog Horror).
+Integrates rural Bengal Courage homestead, Doordarshan CRT broadcasts,
+Kafkaesque metamorphosis of Bimal Babu, and Lovecraftian celestial eye.
 """
 import os
 import math
@@ -14,15 +15,15 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def load_plates(width=1280, height=720):
-    """Loads and resizes background plates to 720p (or 1080p)."""
+    """Loads and resizes Bengali analog horror background plates."""
     plates_dir = os.path.join(ROOT, "plates")
     plates = {}
 
     names = {
-        "farmhouse": "nowhere_farmhouse.jpg",
-        "tv_static": "crt_television_static.jpg",
-        "bedroom": "kafka_bedroom.jpg",
-        "optic_moon": "optic_cosmic_moon.jpg",
+        "homestead": "bengal_courage_homestead.jpg",
+        "bedroom": "bengal_bedroom.jpg",
+        "dd_crt": "doordarshan_crt.jpg",
+        "cosmic_eye": "bengal_cosmic_eye.jpg",
     }
 
     for key, fname in names.items():
@@ -42,69 +43,73 @@ def load_plates(width=1280, height=720):
 
 def render_noir_frame(plates, t, width=1280, height=720, sub_bass=0.1):
     """
-    Renders a single frame of NOIR at timestamp t (seconds).
-    720p default resolution for lightning-fast preview rendering.
+    Renders a single frame of NOIR at timestamp t.
+    Rich Indian / Bengali Analog Horror aesthetics.
     """
     frame = np.zeros((height, width, 3), dtype=np.float32)
 
-    # 1. SCENE 1: EAS Emergency Action Notification (t = 0s to 12s)
+    # 1. SCENE 1: Doordarshan Emergency Broadcast Alert (t = 0s to 12s)
     if t < 12.0:
-        actors.draw_eas_card(frame, t)
+        actors.draw_doordarshan_alert(frame, t)
         if t > 9.5:
-            # Static snow intrusion before cut
+            # Harsh static snow burst before cut
             fade = (t - 9.5) / 2.5
             frame = shaders.apply_white_noise(frame, amount=0.45 * fade)
 
-    # 2. SCENE 2: The Nowhere Farmhouse & Windmill (t = 12s to 30s)
+    # 2. SCENE 2: Courage in Rural Bengal — Isolated House & Banana Trees (t = 12s to 30s)
     elif 12.0 <= t < 30.0:
         scene_t = t - 12.0
-        base = plates["farmhouse"].copy()
-        # Slow pan / zoom
-        zoom = 1.0 + scene_t * 0.008
+        base = plates["homestead"].copy()
+        # Slow, eerie zoom-in
+        zoom = 1.0 + scene_t * 0.007
         M = cv2.getRotationMatrix2D((width * 0.5, height * 0.5), 0, zoom)
         base = cv2.warpAffine(base, M, (width, height))
         frame[:] = base
-        # Procedural windmill
-        actors.draw_windmill(frame, t, cx=int(width * 0.76), cy=int(height * 0.62), scale=0.85)
 
-    # 3. SCENE 3: Kafka's Metamorphosis Bedroom (t = 30s to 55s)
+        # Swaying silhouetted banana trees (kola gachh) and handpump (tubewell)
+        actors.draw_bengal_banana_trees(frame, t, cx=int(width * 0.82), cy=int(height * 0.72), scale=1.0)
+        actors.draw_bengal_banana_trees(frame, t + 1.2, cx=int(width * 0.18), cy=int(height * 0.76), scale=0.85)
+
+    # 3. SCENE 3: Kafka's Metamorphosis in Bengal — Bimal Babu's Room (t = 30s to 55s)
     elif 30.0 <= t < 55.0:
         scene_t = t - 30.0
         frame[:] = plates["bedroom"].copy()
-        # Stage 0 to 1 transformation
+        # Metamorphosis stage
         stage = min(1.0, scene_t / 18.0)
-        actors.draw_gregor_kafka(frame, t, cx=int(width * 0.38), cy=int(height * 0.72), stage=stage)
-        # Procedural crawling spiders on floor
-        if stage > 0.4:
-            actors.draw_spider_swarm(frame, t, count=int(stage * 24))
+        actors.draw_bimal_kafka_bengal(frame, t, cx=int(width * 0.42), cy=int(height * 0.68), stage=stage)
 
-    # 4. SCENE 4: The Surreal Nowhere Cat on Fence (t = 55s to 75s)
+    # 4. SCENE 4: The Black Tomcat on Bamboo Fence by Banana Grove (t = 55s to 75s)
     elif 55.0 <= t < 75.0:
         scene_t = t - 55.0
-        frame[:] = plates["farmhouse"].copy()
-        # Cat neck stretches up towards the heavens
+        frame[:] = plates["homestead"].copy()
+        # Background banana trees behind the fence
+        actors.draw_bengal_banana_trees(frame, t, cx=int(width * 0.80), cy=int(height * 0.74), scale=0.9)
+        # Black Tomcat neck stretches into the sky
         stretch = min(1.0, scene_t / 14.0)
-        actors.draw_surreal_cat(frame, t, cx=int(width * 0.62), cy=int(height * 0.68), stretch=stretch)
+        actors.draw_bengal_hulo_cat(frame, t, cx=int(width * 0.55), cy=int(height * 0.64), stretch=stretch)
 
-    # 5. SCENE 5: The Optic Cosmic Moon & Final TV Static (t = 75s to 90s)
+    # 5. SCENE 5: The Lovecraftian Cosmic Third-Eye over Bengal Palms (t = 75s to 90s)
     else:
         scene_t = t - 75.0
-        frame[:] = plates["optic_moon"].copy()
-        # Subliminal TV static snow surge
-        noise_amt = 0.12 + 0.55 * (scene_t / 15.0)
+        frame[:] = plates["cosmic_eye"].copy()
+        # Silhouetted banana leaves framing the bottom
+        actors.draw_bengal_banana_trees(frame, t, cx=int(width * 0.12), cy=height, scale=1.1)
+        actors.draw_bengal_banana_trees(frame, t, cx=int(width * 0.92), cy=height, scale=1.1)
+        # Cosmic television static interference
+        noise_amt = 0.12 + 0.60 * (scene_t / 15.0)
         frame = shaders.apply_white_noise(frame, amount=noise_amt, breathing=math.sin(t * 4.0))
 
     # ─────────────────────────────────────────────────────────────
     # GLOBAL ANALOG HORROR SHADER POST-PROCESSING
     # ─────────────────────────────────────────────────────────────
-    # 1. VHS tracking jitter & bottom head switching
+    # 1. VHS tracking jitter & bottom 24px head switching noise
     frame = shaders.apply_vhs_tracking(frame, t, sub_bass=sub_bass)
 
-    # 2. VCR On-Screen Display (OSD)
-    osd_msg = "ALERT" if t < 12.0 else "PLAY"
-    shaders.draw_vcr_osd(frame, t, channel="CH 03", message=osd_msg)
+    # 2. Doordarshan DD-1 On-Screen Display (OSD)
+    osd_msg = "DD-1 BANGLA"
+    shaders.draw_vcr_osd(frame, t, channel="VHF 04", message=osd_msg)
 
-    # 3. Vintage CRT Curved Glass & Scanline Raster
-    frame = shaders.apply_crt(frame, curvature=0.06, scanline_intensity=0.20)
+    # 3. Vintage Indian curved CRT glass & cathode scanlines
+    frame = shaders.apply_crt(frame, curvature=0.06, scanline_intensity=0.22)
 
     return np.clip(frame, 0, 255).astype(np.uint8)
