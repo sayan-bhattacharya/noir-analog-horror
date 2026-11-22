@@ -1,5 +1,6 @@
 """
 Procedural Doordarshan Spiral Eye Emblem & Emergency Interruption Actor.
+Proportional layout and auto-fitted text margins ensure pristine rendering at any resolution.
 """
 import math
 import cv2
@@ -27,20 +28,21 @@ def draw_doordarshan_logo(frame: np.ndarray,
         color_gold = (240, 60, 45)
 
     # Core pupil
-    cv2.circle(frame, (cx, cy), int(13 * pulse), color_gold, -1, cv2.LINE_AA)
-    cv2.circle(frame, (cx, cy), int(6 * pulse), color_dark, -1, cv2.LINE_AA)
+    cv2.circle(frame, (cx, cy), int(13 * (radius / 50.0) * pulse), color_gold, -1, cv2.LINE_AA)
+    cv2.circle(frame, (cx, cy), int(6 * (radius / 50.0) * pulse), color_dark, -1, cv2.LINE_AA)
 
     # Symmetrical spiral arms
     for angle_offset in [0.0, math.pi]:
         pts = []
         for a in np.linspace(0, 1.38 * math.pi, 30):
             ang = a + angle_offset + t * rotation_speed
-            dist = 14 + (a / (1.38 * math.pi)) * (r - 14)
+            dist = 12 * (radius / 50.0) + (a / (1.38 * math.pi)) * (r - 12 * (radius / 50.0))
             px = int(cx + math.cos(ang) * dist)
             py = int(cy + math.sin(ang) * dist * 0.82)
             pts.append([px, py])
         if len(pts) > 1:
-            cv2.polylines(frame, [np.array(pts, np.int32)], False, color_gold, 4, cv2.LINE_AA)
+            line_w = max(2, int(4 * (radius / 50.0)))
+            cv2.polylines(frame, [np.array(pts, np.int32)], False, color_gold, line_w, cv2.LINE_AA)
 
     return frame
 
@@ -56,44 +58,65 @@ def render_scene_01(frame: np.ndarray, t: float, params: dict) -> np.ndarray:
 
     red_scan = params.get("red_scanline_intensity", 0.28) if t > pupil_twitch_time else 0.0
 
+    logo_cy = int(h * 0.18)
+    logo_r = int(h * 0.085)
+
     # 1. Doordarshan Logo
-    draw_doordarshan_logo(frame, w // 2, 90, radius=46, t=t,
+    draw_doordarshan_logo(frame, w // 2, logo_cy, radius=logo_r, t=t,
                           rotation_speed=rot_speed,
                           pupil_twitch=is_twitching,
                           red_scanlines=red_scan)
 
     # Motto
-    text_overlay.draw_text(frame, "সত্যম শিবম সুন্দরম", (w // 2, 142), font_size=18,
-                           fill_color=(245, 205, 55), anchor="mm")
+    motto_y = logo_cy + logo_r + int(h * 0.045)
+    text_overlay.draw_text(frame, "সত্যম শিবম সুন্দরম", (w // 2, motto_y),
+                           font_size=int(h * 0.032), fill_color=(245, 205, 55), anchor="mm")
 
     # 2. Emergency Banner cuts across screen at t >= 5.0
     if t >= 5.0:
+        banner_y = int(h * 0.44)
         text_overlay.draw_emergency_banner(
             frame,
             "দূরদর্শন বিশেষ জরুরি সম্প্রচার — পশ্চিমবঙ্গ বিপর্যয় মোকাবিলা",
-            "DOORDARSHAN EMERGENCY BROADCAST — WEST BENGAL SECTOR",
-            y_center=195
+            "[ CODE: 94/ALERT-NISHIDAK  •  SECTOR: WEST BENGAL ]",
+            y_center=banner_y
         )
+
+    # Safe margin for body text
+    safe_margin_x = int(w * 0.10)
+    max_body_w = int(w * 0.80)
 
     # 3. Teleprompter Jurisdiction Text (t >= 7.0)
     if t >= 7.0:
+        sec_y1 = int(h * 0.58)
+        sec_y2 = sec_y1 + int(h * 0.048)
         text_overlay.draw_text(
             frame,
-            "অধিক্ষেত্র: নিস্তব্ধপুর ও পার্শ্ববর্তী জনহীন প্রান্তর",
-            (80, 245), font_size=21, fill_color=(94, 220, 120)
+            "অধিক্ষেত্র: নিস্তব্ধপুর ও তৎসংলগ্ন জনহীন প্রান্তর",
+            (safe_margin_x, sec_y1), font_size=int(h * 0.034), fill_color=(94, 220, 120),
+            max_width=max_body_w
         )
         text_overlay.draw_text(
             frame,
-            "JURISDICTION: NISTOBDHOPUR & ADJACENT UNINHABITED PADDY WASTELANDS",
-            (80, 275), font_size=15, fill_color=(190, 215, 190)
+            "[ JURISDICTION: NISTOBDHOPUR  •  THREAT LEVEL: IV ]",
+            (safe_margin_x, sec_y2), font_size=int(h * 0.024), fill_color=(190, 215, 190),
+            max_width=max_body_w
         )
 
-    # 4. Directive Rule 1 preview
+    # 4. Directive Rule 1 preview (t >= 9.0)
     if t >= 9.0:
+        rule_y = int(h * 0.72)
         text_overlay.draw_text(
             frame,
-            "১. রাত ১২টার পর কলাবাগান থেকে চেনা কণ্ঠে নিশিডাক শুনলে দরজা খুলবেন না।",
-            (80, 320), font_size=20, fill_color=(240, 240, 240)
+            "১. রাত ১২টার পর পরিচিত কণ্ঠে নিশিডাক আসিলে ভুলেও কপাট খুলিবেন না।",
+            (safe_margin_x, rule_y), font_size=int(h * 0.032), fill_color=(240, 240, 240),
+            max_width=max_body_w
+        )
+        text_overlay.draw_text(
+            frame,
+            "[ MANDATORY: DO NOT ANSWER FAMILIAR VOICES IN MONSOON NIGHT ]",
+            (safe_margin_x, rule_y + int(h * 0.046)), font_size=int(h * 0.022), fill_color=(185, 205, 185),
+            max_width=max_body_w
         )
 
     # 5. Flashes and Dropout (11.0s - 14.2s)
