@@ -1,130 +1,145 @@
 """
-Multi-worker rendering engine for PROJECT NOIR.
-Renders 720p HD analog horror film synchronized 100% EXCLUSIVELY with Atandra's track 'Noir.wav'.
-No synthetic siren headers or external audio injected. Pure original music only.
+Master CLI Rendering Engine for Project NOIR / Nishidak.
+Supports full 180s renders, fast previews, single scene renders, and quality selection.
 """
 import os
 import sys
-import math
-import subprocess
+import time
+import argparse
+import yaml
 import soundfile as sf
 import numpy as np
 
+from .utils.config_loader import load_global_config, load_yaml
+from .utils.video_io import FFmpegVideoPipe, mux_audio
+from .timeline import NoirTimeline
+from .audio_map import AudioMapper
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-AUDIO = os.path.join(ROOT, "Noir.wav")
-OUTPUT_720P = os.path.join(ROOT, "noir_720p_story_preview.mp4")
-
-WIDTH = 1280
-HEIGHT = 720
-FPS = 24
-
-
-def ensure_audio():
-    """Ensures Noir.wav exists, extracting from bundled preview if needed."""
-    if os.path.exists(AUDIO):
-        return AUDIO
-    
-    # Check if bundled video exists
-    candidates = [
-        os.path.join(ROOT, "noir_720p_story_preview.mp4"),
-        "C:/Users/sayan/noir-analog-horror/noir_720p_story_preview.mp4",
-        "e:/betweenthenotes/noir_film_project/noir_720p_story_preview.mp4"
-    ]
-    for c in candidates:
-        if os.path.exists(c):
-            print(f"Extracting original soundtrack from {c} to {AUDIO}...", flush=True)
-            subprocess.run(["ffmpeg", "-y", "-i", c, "-vn", "-c:a", "pcm_s16le", AUDIO], check=True)
-            return AUDIO
-    
-    # If still not found, create atmospheric drone fallback so render never crashes
-    print("Warning: Noir.wav not found on disk. Synthesizing deep dark ambient drone fallback...", flush=True)
-    sr = 44100
-    sec = 90
-    t = np.linspace(0, sec, sr * sec, False)
-    # Deep sub-bass drones
-    sub = np.sin(2 * np.pi * 38.0 * t) * 0.4 + np.sin(2 * np.pi * 55.0 * t) * 0.25
-    noise = np.random.normal(0, 0.05, len(t))
-    out_audio = np.clip(sub + noise, -1.0, 1.0)
-    sf.write(AUDIO, out_audio, sr)
-    return AUDIO
+OUTPUT_DIR = os.path.join(ROOT, "output")
+AUDIO_FILE = os.path.join(ROOT, "audio", "Noir.wav")
+if not os.path.exists(AUDIO_FILE):
+    alt_audio = os.path.join(ROOT, "Noir.wav")
+    if os.path.exists(alt_audio):
+        AUDIO_FILE = alt_audio
 
 
-def render_preview(duration=90.0, start_offset=0.0):
-    """
-    Renders the 720p story master of NOIR with 100% PURE 'Noir.wav' audio.
-    Full narrative arc from 1994 Doordarshan alert to Twilight Zone spiral abyss.
-    """
-    from .frame import load_plates, render_noir_frame
+def render(args):
+    global_cfg = load_global_config()
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    # 1. Pre-flight audio check before video pipeline
-    audio_path = ensure_audio()
+    # Resolution and FPS parameters
+    if args.preview:
+        width = int(global_cfg["render"]["width"] * global_cfg["render"]["preview_scale"])
+        height = int(global_cfg["render"]["height"] * global_cfg["render"]["preview_scale"])
+        fps = 12
+    else:
+        width = global_cfg["render"]["width"]
+        height = global_cfg["render"]["height"]
+        fps = global_cfg["render"]["fps"]
 
-    print(f"Loading Bengali analog horror plates for NOIR ({duration:.1f}s, {int(duration * FPS)} frames)...", flush=True)
-    plates = load_plates(width=WIDTH, height=HEIGHT)
+    crf = 16 if args.quality == "final" else (24 if args.preview else 18)
 
-    raw_video = os.path.join(ROOT, "noir_raw.mp4")
-    pipe = subprocess.Popen([
-        "ffmpeg", "-y", "-f", "rawvideo", "-vcodec", "rawvideo",
-        "-s", f"{WIDTH}x{HEIGHT}", "-pix_fmt", "rgb24", "-r", str(FPS),
-        "-i", "-", "-c:v", "libx264", "-preset", "veryfast", "-crf", "18",
-        "-pix_fmt", "yuv420p", raw_video
-    ], stdin=subprocess.PIPE)
+    # Scene duration and start time determination
+    scene_ranges = {
+        1: (0.0, 15.0),
+        2: (15.0, 35.0),
+        3: (35.0, 65.0),
+        4: (65.0, 95.0),
+        5: (95.0, 125.0),
+        6: (125.0, 165.0),
+        7: (165.0, 180.0)
+    }
 
-    total_frames = int(duration * FPS)
+    if args.scene is not None:
+        if args.scene not in scene_ranges:
+            print(f"Error: scene must be between 1 and 7, got {args.scene}")
+            return
+        start_t, end_t = scene_ranges[args.scene]
+        duration = end_t - start_t
+        out_name = f"scene_{args.scene:02d}_{'preview' if args.preview else 'render'}.mp4"
+    elif args.config is not None:
+        custom_cfg = load_yaml(args.config)
+        start_t = custom_cfg.get("start_time", 0.0)
+        duration = custom_cfg.get("duration", 15.0)
+        end_t = start_t + duration
+        code = custom_cfg.get("scene_code", "custom")
+        out_name = f"{code}_{'preview' if args.preview else 'render'}.mp4"
+    else:
+        # Full render
+        start_t = 0.0
+        duration = float(args.duration or global_cfg["render"]["duration_seconds"])
+        end_t = start_t + duration
+        out_name = f"noir_master_{int(duration)}s_{'preview' if args.preview else 'final'}.mp4"
+
+    raw_output = os.path.join(OUTPUT_DIR, f"temp_{out_name}")
+    final_output = os.path.join(OUTPUT_DIR, out_name)
+
+    print(f"===========================================================")
+    print(f"  PROJECT NOIR / NISHIDAK VISUAL ENGINE")
+    print(f"  Rendering: {out_name}")
+    print(f"  Time Window: {start_t:.1f}s -> {end_t:.1f}s ({duration:.1f}s)")
+    print(f"  Dimensions: {width}x{height} @ {fps} fps (CRF: {crf})")
+    print(f"===========================================================")
+
+    timeline = NoirTimeline(global_cfg)
+    audio_mapper = AudioMapper(AUDIO_FILE) if not args.no_audio else None
+
+    pipe = FFmpegVideoPipe(raw_output, width=width, height=height, fps=fps, crf=crf)
+
+    total_frames = int(duration * fps)
+    start_wall = time.time()
+
     for f_idx in range(total_frames):
-        t = f_idx / FPS
-        # Sub-bass intensity mapping across narrative movements
-        if t < 14.0:
-            sub_bass = 0.15 + 0.05 * math.sin(t * 3.0)
-        elif t < 30.0:
-            sub_bass = 0.22 + 0.08 * math.sin(t * 2.0)
-        elif t < 48.0:
-            sub_bass = 0.35 + 0.12 * math.sin(t * 2.5)
-        elif t < 70.0: # The Twilight Zone Spiral Abyss
-            sub_bass = 0.55 + 0.25 * math.sin(t * 4.0)
-        elif t < 85.0: # The Tomcat & Celestial Eye
-            sub_bass = 0.38 + 0.15 * math.sin(t * 1.8)
-        else:
-            sub_bass = 0.25
+        local_t = f_idx / fps
+        t = start_t + local_t
 
-        frame = render_noir_frame(plates, t, width=WIDTH, height=HEIGHT, sub_bass=sub_bass)
-        pipe.stdin.write(frame.tobytes())
+        audio_features = audio_mapper.get_features_at(t) if audio_mapper else {"sub_bass": 0.1, "rms": 0.1}
+        frame = timeline.render_frame_at(t, width=width, height=height, audio_features=audio_features)
+        pipe.write_frame(frame)
 
-        if f_idx % 120 == 0:
-            print(f"  Rendered {f_idx}/{total_frames} frames ({t:.1f}s)...", flush=True)
+        if f_idx % (fps * 2) == 0 or f_idx == total_frames - 1:
+            elapsed = time.time() - start_wall
+            pct = (f_idx + 1) / total_frames * 100.0
+            fps_render = (f_idx + 1) / max(0.001, elapsed)
+            print(f"  Progress: {pct:5.1f}% | Frame: {f_idx+1:4d}/{total_frames} | Speed: {fps_render:4.1f} fps", flush=True)
 
-    pipe.stdin.close()
-    pipe.wait()
+    pipe.close()
 
-    # Mux 100% PURE Noir.wav directly into the final container
-    print(f"Muxing pure original audio from {audio_path} into {OUTPUT_720P}...", flush=True)
-    cmd = [
-        "ffmpeg", "-y", "-i", raw_video,
-        "-stream_loop", "-1", "-ss", str(start_offset), "-i", audio_path, "-t", str(duration),
-        "-c:v", "copy", "-c:a", "aac", "-b:a", "320k",
-        OUTPUT_720P
-    ]
-    subprocess.check_call(cmd)
+    # Audio Muxing
+    if not args.no_audio and os.path.exists(AUDIO_FILE):
+        print(f"Muxing soundtrack from {AUDIO_FILE}...")
+        mux_audio(raw_output, AUDIO_FILE, final_output, duration=duration)
+    else:
+        if os.path.exists(raw_output):
+            if os.path.exists(final_output):
+                os.remove(final_output)
+            os.rename(raw_output, final_output)
 
-    # Cleanup temp raw video
-    if os.path.exists(raw_video):
-        os.remove(raw_video)
+    total_time = time.time() - start_wall
+    file_size_mb = os.path.getsize(final_output) / (1024 * 1024) if os.path.exists(final_output) else 0
+    print(f"[SUCCESS] Master exported to: {final_output} ({file_size_mb:.2f} MB in {total_time:.1f}s)")
 
-    print(f"[SUCCESS] Pure Noir Master: {OUTPUT_720P} ({os.path.getsize(OUTPUT_720P) / 1024 / 1024:.1f} MB)", flush=True)
-    return True
+
+def main():
+    parser = argparse.ArgumentParser(description="Project NOIR / Nishidak Analog Horror Cinema Engine")
+    parser.add_argument("--preview", action="store_true", help="Fast low-res 640x360 12fps render")
+    parser.add_argument("--full", action="store_true", help="Render full duration master")
+    parser.add_argument("--scene", type=int, choices=range(1, 8), help="Render a specific scene (1-7)")
+    parser.add_argument("--config", type=str, help="Render from custom scene yaml configuration")
+    parser.add_argument("--duration", type=float, help="Custom duration in seconds")
+    parser.add_argument("--no-audio", action="store_true", help="Render silent video without audio track")
+    parser.add_argument("--quality", choices=["draft", "preview", "final"], default="preview", help="Render encoding quality")
+
+    args = parser.parse_args()
+
+    # Legacy positional argument compatibility (e.g. `python -m noir_film.render_noir 15`)
+    if len(sys.argv) > 1 and sys.argv[1].isdigit():
+        args.duration = float(sys.argv[1])
+        args.full = True
+
+    render(args)
 
 
 if __name__ == "__main__":
-    duration = 90.0
-    start_offset = 0.0
-    if len(sys.argv) > 1:
-        try:
-            duration = float(sys.argv[1])
-        except ValueError:
-            pass
-    if len(sys.argv) > 2:
-        try:
-            start_offset = float(sys.argv[2])
-        except ValueError:
-            pass
-    render_preview(duration=duration, start_offset=start_offset)
+    main()

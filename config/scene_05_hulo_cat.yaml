@@ -1,0 +1,19 @@
+scene_code: "ACT_05_HULO_CAT_NECK"
+start_time: 95.0
+end_time: 125.0
+duration: 30.0
+
+plate: "bengal_courage_homestead.jpg"
+
+parameters:
+  cat_silhouette_scale: 1.0
+  neck_stretch_start_time: 102.0
+  neck_stretch_end_time: 122.0
+  neck_stretch_factor: 1.0
+  neck_curve_amount: 0.25
+  eye_glow_intensity: 0.95
+  eye_color: [245, 225, 45]
+  tail_coil_speed: 1.2
+  cloud_penetration_progress: 1.0
+  direct_gaze_intensity: 0.9
+  bass_neck_pulse: 0.35

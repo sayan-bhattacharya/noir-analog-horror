@@ -1,0 +1,20 @@
+scene_code: "ACT_06_TRINETRA_COSMIC"
+start_time: 125.0
+end_time: 165.0
+duration: 40.0
+
+plate: "bengal_cosmic_eye.jpg"
+
+parameters:
+  eye_scale: 1.15
+  pupil_base_radius: 35
+  pupil_dilation_max: 85
+  bass_to_pupil_dilation: 0.65
+  capillary_branch_density: 18
+  capillary_pulse_speed: 1.8
+  sky_tear_progress: 1.0
+  cosmic_eye_glow: 0.85
+  static_breathing_amplitude: 0.35
+  star_swallow_intensity: 0.70
+  landscape_shake_amount: 0.40
+  final_decree_reveal_time: 142.0
