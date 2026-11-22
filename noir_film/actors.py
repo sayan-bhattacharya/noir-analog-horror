@@ -1,8 +1,8 @@
 """
 Authentic Indian & Bengali Analog Horror Character Actors & Graphic Shaders for PROJECT NOIR.
 - 1994 Doordarshan Calcutta Emergency Alert (দূরদর্শন কেন্দ্র কলকাতা) in pure authentic Bengali typography.
-- Twilight Zone optical illusion spiral abyss with the tumbling falling man.
-- Regular bedroom draped in an authentic Moshari (মশারি / mosquito net canopy).
+- Silent film / Alex Kister style dialogue intertitle cards with film grain, scratches, gate weave, and tape dropouts.
+- Twilight Zone optical illusion spiral abyss with the tumbling falling man in freefall vertigo.
 - Subtle, delicate rural Bengal banana fronds (non-cluttering).
 - Black Tomcat on rustic bamboo fence (বাঁশের বেড়া).
 """
@@ -54,6 +54,69 @@ def draw_bengali_text(img, text, pos, font_size=24, fill_color=(240, 240, 240), 
     font = get_bengali_font(font_size)
     draw.text(pos, text, font=font, fill=fill_color, anchor=anchor)
     img[:] = np.array(pil_img)
+
+
+def draw_silent_film_intertitle(frame, main_text, sub_text="", t=0.0):
+    """
+    Renders an authentic vintage Silent Film / Alex Kister analog horror dialogue card.
+    Features:
+      - Deep charcoal black background.
+      - Double-line ornate art-deco border.
+      - Gate weave (organic vertical/horizontal jitter).
+      - Authentic high-contrast Bengali dialogue typography.
+      - Film grain, dust specks, and thin vertical scratches.
+    """
+    h, w = frame.shape[:2]
+    frame[:, :] = [12, 10, 14]
+
+    # Gate weave jitter
+    jitter_y = int(math.sin(t * 19.0) * 1.5)
+    jitter_x = int(math.cos(t * 13.0) * 1.2)
+
+    # Ornate double border
+    pad = 52
+    b1_col = (210, 205, 195)
+    b2_col = (130, 125, 120)
+
+    cv2.rectangle(frame, (pad + jitter_x, pad + jitter_y),
+                  (w - pad + jitter_x, h - pad + jitter_y), b1_col, 2)
+    cv2.rectangle(frame, (pad + 12 + jitter_x, pad + 12 + jitter_y),
+                  (w - pad - 12 + jitter_x, h - pad - 12 + jitter_y), b2_col, 1)
+
+    # Corner diamond rivets
+    for cx_b, cy_b in [
+        (pad + 12 + jitter_x, pad + 12 + jitter_y),
+        (w - pad - 12 + jitter_x, pad + 12 + jitter_y),
+        (pad + 12 + jitter_x, h - pad - 12 + jitter_y),
+        (w - pad - 12 + jitter_x, h - pad - 12 + jitter_y)
+    ]:
+        cv2.circle(frame, (cx_b, cy_b), 4, b1_col, -1)
+
+    # Render Bengali Dialogue Text via PIL
+    pil_img = Image.fromarray(frame)
+    draw = ImageDraw.Draw(pil_img)
+    font_main = get_bengali_font(34)
+    font_sub = get_bengali_font(21)
+
+    cy = h // 2 + jitter_y - (22 if sub_text else 0)
+    draw.text((w // 2 + jitter_x, cy), main_text, font=font_main, fill=(245, 242, 235), anchor="mm")
+
+    if sub_text:
+        draw.text((w // 2 + jitter_x, cy + 50), sub_text, font=font_sub, fill=(180, 175, 165), anchor="mm")
+
+    frame[:] = np.array(pil_img)
+
+    # Vintage film vertical scratches (periodic flickering scratch)
+    if int(t * 8) % 2 == 0:
+        scratch_x = int((math.sin(t * 5.3) * 0.4 + 0.5) * (w - 140) + 70)
+        cv2.line(frame, (scratch_x, 0), (scratch_x, h), (85, 80, 75), 1)
+
+    # Dust specks
+    rng = np.random.RandomState(int(t * 24))
+    for _ in range(12):
+        rx = rng.randint(pad + 15, w - pad - 15)
+        ry = rng.randint(pad + 15, h - pad - 15)
+        frame[ry, rx] = [170, 165, 160]
 
 
 def draw_doordarshan_logo(frame, cx, cy, radius=52, t=0.0):
@@ -112,7 +175,6 @@ def draw_doordarshan_alert(frame, t):
 
     # 3. Emergency Banner (লাল সতর্কবার্তা পটভূমি)
     banner_y1, banner_y2 = 168, 228
-    # Draw red rectangle with gold outline on image
     temp = np.array(pil_img)
     cv2.rectangle(temp, (60, banner_y1), (w - 60, banner_y2), (185, 22, 28), -1)
     cv2.rectangle(temp, (60, banner_y1), (w - 60, banner_y2), (245, 205, 55), 2)
@@ -127,7 +189,7 @@ def draw_doordarshan_alert(frame, t):
     draw.text((95, 280), "অধিক্ষেত্র: নিস্তব্ধপুর ও তৎসংলগ্ন মৌজা (বীরভূম ও পশ্চিম মেদিনীপুর সীমানা)",
               font=font_small, fill=(200, 225, 205))
 
-    # 5. Typewriter Directives in Pure Bengali
+    # 5. Directives
     directives = [
         ("জরুরি নির্দেশাবলী (অবিলম্বে পালনীয়):", True),
         ("১. রাত ১২টার পর পরিচিত কণ্ঠে নিশিডাক আসিলে ভুলেও কপাট খুলিবেন না।", False),
@@ -138,8 +200,7 @@ def draw_doordarshan_alert(frame, t):
         ("সম্প্রচার সমাপ্ত হইবে না (এই জরুরি সম্প্রচার নিরবচ্ছিন্নভাবে চলিবে)", True)
     ]
 
-    # Typewriter progression (all visible after ~7 seconds)
-    chars_to_show = int(t * 32)
+    chars_to_show = int(t * 36)
     accumulated_chars = 0
     y_pos = 325
 
@@ -172,9 +233,7 @@ def draw_doordarshan_alert(frame, t):
 
         y_pos += 42
 
-    # Corner broadcast tag
     draw.text((w - 180, 52), "ডিডি-১ বাংলা", font=font_small, fill=(65, 235, 125))
-
     frame[:] = np.array(pil_img)
 
 
@@ -184,7 +243,6 @@ def draw_subtle_banana_frond(frame, t, cx=1180, cy=720, scale=0.7):
     swaying gently in the night mist at the edge of the frame.
     """
     color = (14, 12, 18)
-    # Just 2-3 delicate fronds gently curving in from the corner
     for angle_deg, length, wind_phase in [(-42, 170, 0.4), (-20, 190, 0.8), (12, 150, 0.2)]:
         sway = math.sin(t * 1.4 + wind_phase) * 5.0
         rad = math.radians(angle_deg + sway)
@@ -200,71 +258,6 @@ def draw_subtle_banana_frond(frame, t, cx=1180, cy=720, scale=0.7):
             [ctrl_x + int(12 * scale), ctrl_y + int(8 * scale)]
         ]
         cv2.fillPoly(frame, [np.array(leaf_pts, np.int32)], color)
-
-
-def draw_moshari_net(frame, t, bed_rect=(260, 240, 740, 420)):
-    """
-    Renders an authentic Bengali Moshari (মশারি / mosquito net canopy)
-    draped over a regular home bedroom bed.
-    Features:
-      - 4 corner suspension strings tied to ceiling points.
-      - Translucent sheer white/cream gauze netting.
-      - Subtle cross-hatching grid texture.
-      - Silhouette of a person tossing restlessly beneath the net.
-    """
-    x, y, bw, bh = bed_rect
-    h, w = frame.shape[:2]
-
-    # 4 top canopy corners
-    p1 = (x + int(bw * 0.12), y)                   # back-left
-    p2 = (x + int(bw * 0.88), y)                   # back-right
-    p3 = (x + bw, y + int(bh * 0.20))              # front-right
-    p4 = (x, y + int(bh * 0.20))                   # front-left
-
-    # 4 bottom corners reaching the mattress/bed level
-    p1_b = (p1[0], y + int(bh * 0.85))
-    p2_b = (p2[0], y + int(bh * 0.85))
-    p3_b = (p3[0], y + bh)
-    p4_b = (p4[0], y + bh)
-
-    # 1. Suspension cords to wall/ceiling
-    cord_col = (135, 130, 125)
-    cv2.line(frame, p1, (p1[0] - 60, 40), cord_col, 1, cv2.LINE_AA)
-    cv2.line(frame, p2, (p2[0] + 60, 40), cord_col, 1, cv2.LINE_AA)
-    cv2.line(frame, p3, (p3[0] + 70, 70), cord_col, 1, cv2.LINE_AA)
-    cv2.line(frame, p4, (p4[0] - 70, 70), cord_col, 1, cv2.LINE_AA)
-
-    # 2. Person tossing inside under the net (semi-dark silhouette inside)
-    toss_x = int(x + bw * 0.48 + math.sin(t * 1.8) * 8)
-    toss_y = int(y + bh * 0.62)
-    # Head and torso lying down
-    cv2.ellipse(frame, (toss_x, toss_y), (42, 16), int(math.sin(t * 1.2) * 5), 0, 360, (22, 18, 26), -1)
-    cv2.circle(frame, (toss_x - 52, toss_y - 2), 12, (22, 18, 26), -1)
-
-    # 3. Translucent gauze canopy overlay
-    overlay = frame.copy()
-    pts_top = np.array([p1, p2, p3, p4], np.int32)
-    pts_front = np.array([p4, p3, p3_b, p4_b], np.int32)
-    pts_side = np.array([p3, p2, p2_b, p3_b], np.int32)
-
-    net_color = (215, 210, 202)  # Sheer cotton gauze
-    cv2.fillPoly(overlay, [pts_top, pts_front, pts_side], net_color)
-
-    # Delicate cross-hatch netting grid
-    for gy in range(p4[1], p4_b[1], 15):
-        cv2.line(overlay, (p4[0], gy), (p3[0], gy), (230, 226, 218), 1)
-    for gx in range(p4[0], p3[0], 16):
-        cv2.line(overlay, (gx, p4[1]), (gx, p4_b[1]), (230, 226, 218), 1)
-
-    # Alpha blend net (26% opacity for realistic sheer gauze transparency)
-    cv2.addWeighted(overlay, 0.26, frame, 0.74, 0, frame)
-
-    # Edge pipings / border tapes (মশারির ধার)
-    border_col = (225, 220, 212)
-    cv2.polylines(frame, [pts_top], True, border_col, 2, cv2.LINE_AA)
-    cv2.line(frame, p4, p4_b, border_col, 2, cv2.LINE_AA)
-    cv2.line(frame, p3, p3_b, border_col, 2, cv2.LINE_AA)
-    cv2.line(frame, p4_b, p3_b, border_col, 2, cv2.LINE_AA)
 
 
 # Cache coordinate grid for the Twilight Zone spiral abyss
@@ -292,17 +285,16 @@ def draw_twilight_zone_abyss(frame, t, sub_bass=0.1):
     # 1. Hypnotic Spiral Illusion Mathematics
     arms = 6.0
     twist = 0.088
-    speed = 2.6 + 1.2 * sub_bass
+    speed = 2.8 + 1.6 * sub_bass
     spiral_phase = arms * theta + twist * np.sqrt(r) * 16.0 - t * speed
     val = np.sin(spiral_phase)
 
     # High-contrast bone-white / amber CRT phosphor & deep void black
-    bone_white = np.array([218, 212, 202], dtype=np.uint8)
+    bone_white = np.array([220, 214, 202], dtype=np.uint8)
     deep_void = np.array([12, 10, 16], dtype=np.uint8)
 
     mask = (val > 0).astype(np.float32)[:, :, None]
-    # Center infinite black hole singularity
-    core_void = np.clip((r - 30.0) / 260.0, 0.0, 1.0)
+    core_void = np.clip((r - 28.0) / 250.0, 0.0, 1.0)
     outer_vignette = np.clip(1.25 - r / (w * 0.58), 0.0, 1.0)
     depth_falloff = (core_void * outer_vignette)[:, :, None]
 
@@ -343,21 +335,21 @@ def draw_twilight_zone_abyss(frame, t, sub_bass=0.1):
             cv2.addWeighted(target, alpha, canvas, 1.0 - alpha, 0, canvas)
 
     # Tumbling dynamics: rotating, drifting inward towards the singularity
-    tumble_ang = t * 1.85
-    drift_radius = 80.0 * (0.8 + 0.2 * math.sin(t * 0.8))
-    man_x = int(cx + math.cos(t * 0.85) * drift_radius)
-    man_y = int(cy + math.sin(t * 0.85) * drift_radius * 0.65)
-    man_scale = 0.95 + 0.15 * math.sin(t * 1.4)
+    tumble_ang = t * 2.1
+    drift_radius = 85.0 * (0.75 + 0.25 * math.sin(t * 1.1))
+    man_x = int(cx + math.cos(t * 0.95) * drift_radius)
+    man_y = int(cy + math.sin(t * 0.95) * drift_radius * 0.68)
+    man_scale = 1.0 + 0.20 * math.sin(t * 1.5)
 
     # Ghost vertigo echo trails behind the falling figure
     draw_tumbler(frame,
-                 int(cx + math.cos((t - 0.25) * 0.85) * (drift_radius + 18)),
-                 int(cy + math.sin((t - 0.25) * 0.85) * (drift_radius + 18) * 0.65),
-                 (t - 0.25) * 1.85, man_scale * 1.2, alpha=0.32)
+                 int(cx + math.cos((t - 0.25) * 0.95) * (drift_radius + 20)),
+                 int(cy + math.sin((t - 0.25) * 0.95) * (drift_radius + 20) * 0.68),
+                 (t - 0.25) * 2.1, man_scale * 1.25, alpha=0.30)
     draw_tumbler(frame,
-                 int(cx + math.cos((t - 0.12) * 0.85) * (drift_radius + 8)),
-                 int(cy + math.sin((t - 0.12) * 0.85) * (drift_radius + 8) * 0.65),
-                 (t - 0.12) * 1.85, man_scale * 1.1, alpha=0.55)
+                 int(cx + math.cos((t - 0.12) * 0.95) * (drift_radius + 10)),
+                 int(cy + math.sin((t - 0.12) * 0.95) * (drift_radius + 10) * 0.68),
+                 (t - 0.12) * 2.1, man_scale * 1.12, alpha=0.55)
     # Solid falling man
     draw_tumbler(frame, man_x, man_y, tumble_ang, man_scale, alpha=1.0)
 
