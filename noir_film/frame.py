@@ -32,11 +32,11 @@ def load_plates(width=1280, height=720):
             img = cv2.imread(fpath)
             if img is not None:
                 img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-                plates[key] = cv2.resize(img_rgb, (width, height), interpolation=cv2.INTER_AREA).astype(np.float32)
+                plates[key] = cv2.resize(img_rgb, (width, height), interpolation=cv2.INTER_AREA).astype(np.uint8)
             else:
-                plates[key] = np.zeros((height, width, 3), np.float32)
+                plates[key] = np.zeros((height, width, 3), np.uint8)
         else:
-            plates[key] = np.zeros((height, width, 3), np.float32)
+            plates[key] = np.zeros((height, width, 3), np.uint8)
 
     return plates
 
@@ -46,7 +46,7 @@ def render_noir_frame(plates, t, width=1280, height=720, sub_bass=0.1):
     Renders a single frame of NOIR at timestamp t.
     Rich Indian / Bengali Analog Horror aesthetics.
     """
-    frame = np.zeros((height, width, 3), dtype=np.float32)
+    frame = np.zeros((height, width, 3), dtype=np.uint8)
 
     # 1. SCENE 1: Doordarshan Emergency Broadcast Alert (t = 0s to 12s)
     if t < 12.0:

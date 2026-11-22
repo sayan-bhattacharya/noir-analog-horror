@@ -32,6 +32,7 @@ def apply_crt(frame, curvature=0.08, scanline_intensity=0.22, vignette=0.85):
     map_y = ((norm_y * distort + 1.0) * (h * 0.5)).astype(np.float32)
 
     curved = cv2.remap(frame, map_x, map_y, cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=(0, 0, 0))
+    curved = curved.astype(np.float32)
 
     # CRT horizontal scanlines (alternating cathode beam intensity)
     scanlines = np.ones((h, 1, 1), dtype=np.float32)
@@ -42,7 +43,7 @@ def apply_crt(frame, curvature=0.08, scanline_intensity=0.22, vignette=0.85):
     corner_falloff = np.clip(1.0 - 0.35 * (r2 ** 1.5), 0.0, 1.0)
     curved *= corner_falloff[:, :, None]
 
-    return np.clip(curved, 0, 255).astype(np.float32)
+    return np.clip(curved, 0, 255).astype(np.uint8)
 
 
 def apply_vhs_tracking(frame, t, tear_intensity=1.0, sub_bass=0.0):
@@ -53,7 +54,7 @@ def apply_vhs_tracking(frame, t, tear_intensity=1.0, sub_bass=0.0):
       - Chromatic aberration (RGB shift)
     """
     h, w, c = frame.shape
-    out = frame.copy()
+    out = frame.copy().astype(np.uint8)
 
     # 1. Chromatic aberration (Red left, Blue right)
     shift = int(2 + 4 * sub_bass)
@@ -71,7 +72,7 @@ def apply_vhs_tracking(frame, t, tear_intensity=1.0, sub_bass=0.0):
     out[y_start:h, :] = np.roll(band, shift_px, axis=1)
     # Add snow noise to the head switching band
     snow = np.random.uniform(0, 120, band.shape).astype(np.float32)
-    out[y_start:h, :] = np.clip(out[y_start:h, :] * 0.5 + snow * 0.5, 0, 255)
+    out[y_start:h, :] = np.clip(out[y_start:h, :].astype(np.float32) * 0.5 + snow * 0.5, 0, 255).astype(np.uint8)
 
     # 3. High-energy horizontal tape tear on sub-bass impact
     if sub_bass > 0.4:
@@ -80,13 +81,13 @@ def apply_vhs_tracking(frame, t, tear_intensity=1.0, sub_bass=0.0):
         tear_shift = int(np.random.choice([-1, 1]) * (8 + sub_bass * 30))
         out[tear_y:tear_y+tear_len] = np.roll(out[tear_y:tear_y+tear_len], tear_shift, axis=1)
 
-    return out
+    return out.astype(np.uint8)
 
 
 def apply_white_noise(frame, amount=0.08, breathing=0.0):
     """Adds analog antenna static snow."""
     noise = np.random.normal(0, 18.0 * (1.0 + breathing), frame.shape).astype(np.float32)
-    return np.clip(frame + noise * (amount / 0.08), 0, 255)
+    return np.clip(frame.astype(np.float32) + noise * (amount / 0.08), 0, 255).astype(np.uint8)
 
 
 def draw_vcr_osd(frame, t, channel="CH 03", message="PLAY"):

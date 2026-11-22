@@ -50,11 +50,20 @@ def render_preview(duration=60.0, start_offset=0.0):
     pipe.stdin.close()
     pipe.wait()
 
+    # Check audio source or extract from bundled preview
+    if not os.path.exists(AUDIO):
+        preview = os.path.join(ROOT, "noir_720p_story_preview.mp4")
+        if os.path.exists(preview):
+            print(f"Extracting original soundtrack from {preview} to {AUDIO}...", flush=True)
+            subprocess.run(["ffmpeg", "-y", "-i", preview, "-vn", "-c:a", "pcm_s16le", AUDIO], check=True)
+        else:
+            raise FileNotFoundError(f"Neither {AUDIO} nor {preview} found.")
+
     # Mux 100% PURE Noir.wav directly into the video container
     print(f"Muxing pure original audio from {AUDIO} into {OUTPUT_720P}...", flush=True)
     cmd = [
         "ffmpeg", "-y", "-i", raw_video,
-        "-ss", str(start_offset), "-i", AUDIO, "-t", str(duration),
+        "-stream_loop", "-1", "-ss", str(start_offset), "-i", AUDIO, "-t", str(duration),
         "-c:v", "copy", "-c:a", "aac", "-b:a", "320k",
         OUTPUT_720P
     ]
