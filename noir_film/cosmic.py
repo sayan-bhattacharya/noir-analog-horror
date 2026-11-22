@@ -1,6 +1,6 @@
 """
 Cosmic horror procedural generation for Project NOIR.
-Star fields, void gradients, and the hypnotic Twilight Zone optical spiral abyss with the tumbling falling man.
+Star fields, void gradients, and the hypnotic 'After Midnight, Somewhere Else' optical spiral abyss with the tumbling falling man.
 """
 import math
 import cv2
@@ -35,9 +35,9 @@ def render_starfield(frame: np.ndarray, count: int = 150, seed: int = 1994) -> n
     return out
 
 
-def draw_twilight_zone_abyss(frame: np.ndarray, t: float, sub_bass: float = 0.1, arms: int = 6, twist: float = 0.088) -> np.ndarray:
+def draw_after_midnight_abyss(frame: np.ndarray, t: float, sub_bass: float = 0.1, arms: int = 6, twist: float = 0.088) -> np.ndarray:
     """
-    Renders an intense, hypnotic 'Twilight Zone' spinning optical illusion spiral abyss
+    Renders the hypnotic 'After Midnight, Somewhere Else' spinning optical illusion spiral abyss
     with the silhouette of the man tumbling and falling into the endless vortex.
     """
     h, w = frame.shape[:2]
@@ -106,3 +106,6 @@ def draw_twilight_zone_abyss(frame: np.ndarray, t: float, sub_bass: float = 0.1,
                  (t - 0.12) * 2.1, man_scale * 1.12, alpha=0.55)
     draw_tumbler(frame, man_x, man_y, tumble_ang, man_scale, alpha=1.0)
     return frame
+
+# Backward compatibility alias
+draw_twilight_zone_abyss = draw_after_midnight_abyss

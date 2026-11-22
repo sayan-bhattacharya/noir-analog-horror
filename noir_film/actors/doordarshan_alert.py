@@ -1,5 +1,5 @@
 """
-Procedural Doordarshan Spiral Eye Emblem & Emergency Interruption Actor.
+Procedural Bharat Darpan Spiral Eye Emblem & Emergency Interruption Actor.
 Proportional layout and auto-fitted text margins ensure pristine rendering at any resolution.
 """
 import math
@@ -8,15 +8,15 @@ import numpy as np
 from .. import text_overlay
 
 
-def draw_doordarshan_logo(frame: np.ndarray,
-                          cx: int,
-                          cy: int,
-                          radius: int = 50,
-                          t: float = 0.0,
-                          rotation_speed: float = 0.35,
-                          pupil_twitch: bool = False,
-                          red_scanlines: float = 0.0) -> np.ndarray:
-    """Renders the iconic Doordarshan spiral eye emblem with phosphor glow."""
+def draw_bharat_darpan_logo(frame: np.ndarray,
+                            cx: int,
+                            cy: int,
+                            radius: int = 50,
+                            t: float = 0.0,
+                            rotation_speed: float = 0.35,
+                            pupil_twitch: bool = False,
+                            red_scanlines: float = 0.0) -> np.ndarray:
+    """Renders the Bharat Darpan spiral emblem with phosphor glow."""
     pulse = 1.0 + 0.05 * math.sin(t * 4.0)
     if pupil_twitch:
         pulse += 0.12 * math.sin(t * 32.0)
@@ -46,9 +46,12 @@ def draw_doordarshan_logo(frame: np.ndarray,
 
     return frame
 
+# Backward compatibility alias
+draw_doordarshan_logo = draw_bharat_darpan_logo
+
 
 def render_scene_01(frame: np.ndarray, t: float, params: dict) -> np.ndarray:
-    """Renders Scene 1: ACT_01_DD_INTERRUPT (00:00 - 00:15)."""
+    """Renders Scene 1: ACT_01_SIGNAL_INTERRUPT (00:00 - 00:15)."""
     h, w = frame.shape[:2]
     frame[:, :] = [18, 15, 48]
 
@@ -61,11 +64,11 @@ def render_scene_01(frame: np.ndarray, t: float, params: dict) -> np.ndarray:
     logo_cy = int(h * 0.18)
     logo_r = int(h * 0.085)
 
-    # 1. Doordarshan Logo
-    draw_doordarshan_logo(frame, w // 2, logo_cy, radius=logo_r, t=t,
-                          rotation_speed=rot_speed,
-                          pupil_twitch=is_twitching,
-                          red_scanlines=red_scan)
+    # 1. Bharat Darpan Logo
+    draw_bharat_darpan_logo(frame, w // 2, logo_cy, radius=logo_r, t=t,
+                            rotation_speed=rot_speed,
+                            pupil_twitch=is_twitching,
+                            red_scanlines=red_scan)
 
     # Motto
     motto_y = logo_cy + logo_r + int(h * 0.045)
@@ -77,8 +80,8 @@ def render_scene_01(frame: np.ndarray, t: float, params: dict) -> np.ndarray:
         banner_y = int(h * 0.44)
         text_overlay.draw_emergency_banner(
             frame,
-            "দূরদর্শন বিশেষ জরুরি সম্প্রচার — পশ্চিমবঙ্গ বিপর্যয় মোকাবিলা",
-            "[ CODE: 94/ALERT-NISHIDAK  •  SECTOR: WEST BENGAL ]",
+            "ভারত দর্পণ বিশেষ জরুরি সম্প্রচার — পশ্চিমবঙ্গ বিপর্যয় মোকাবিলা",
+            "[ CODE: 94/ALERT-NISHIDAK  •  SECTOR: BHARAT DARPAN WB ]",
             y_center=banner_y
         )
 
@@ -127,3 +130,4 @@ def render_scene_01(frame: np.ndarray, t: float, params: dict) -> np.ndarray:
         frame[:, :] = [4, 4, 6]  # Cut to black
 
     return frame
+

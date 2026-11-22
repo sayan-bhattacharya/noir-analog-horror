@@ -79,7 +79,7 @@ def render_noir_frame(plates, t, width=1280, height=720, sub_bass=0.1):
         frame[:, :] = [18, 15, 48]
         # Pulsating macro eye
         actors.draw_doordarshan_logo(frame, width // 2, height // 2, radius=int(75 + st * 15), t=t)
-        actors.draw_bengali_text(frame, "দূরদর্শন কেন্দ্র কলকাতা", (width // 2, int(height * 0.78)),
+        actors.draw_bengali_text(frame, "ভারত দর্পণ কেন্দ্র কলকাতা", (width // 2, int(height * 0.78)),
                                  font_size=26, fill_color=(245, 205, 55), anchor="mm")
         if st > 1.8:
             frame = shaders.apply_white_noise(frame, amount=0.45 * (st - 1.8))
@@ -218,7 +218,7 @@ def render_noir_frame(plates, t, width=1280, height=720, sub_bass=0.1):
         st = t - 66.0
         frame[:, :] = [18, 15, 48]
         actors.draw_doordarshan_logo(frame, width // 2, 110, radius=42, t=t)
-        actors.draw_bengali_text(frame, "দূরদর্শন কেন্দ্র কলকাতা", (width // 2, 170),
+        actors.draw_bengali_text(frame, "ভারত দর্পণ কেন্দ্র কলকাতা", (width // 2, 170),
                                  font_size=22, fill_color=(245, 205, 55), anchor="mm")
         actors.draw_bengali_text(frame, "সম্প্রচার সমাপ্ত হইবে না", (width // 2, height // 2 + 10),
                                  font_size=34, fill_color=(245, 60, 60), anchor="mm")

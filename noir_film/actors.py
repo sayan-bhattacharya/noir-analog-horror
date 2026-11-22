@@ -181,7 +181,7 @@ def draw_doordarshan_alert(frame, t):
     pil_img = Image.fromarray(temp)
     draw = ImageDraw.Draw(pil_img)
 
-    draw.text((w // 2, 198), "দূরদর্শন বিশেষ জরুরি সম্প্রচার — পশ্চিমবঙ্গ বিপর্যয় মোকাবিলা দফতর",
+    draw.text((w // 2, 198), "ভারত দর্পণ বিশেষ জরুরি সম্প্রচার — পশ্চিমবঙ্গ বিপর্যয় মোকাবিলা দফতর",
               font=font_banner, fill=(255, 255, 255), anchor="mm")
 
     # 4. Bureaucratic Sector Notice
