@@ -116,6 +116,17 @@ def render(args):
                 os.remove(final_output)
             os.rename(raw_output, final_output)
 
+    # Overwrite root shortcut paths so Colab/player always serves the freshly rendered master
+    import shutil
+    for alias_path in [
+        os.path.join(ROOT, "noir_master_output.mp4"),
+        os.path.join(ROOT, "noir_720p_story_preview.mp4")
+    ]:
+        try:
+            shutil.copy2(final_output, alias_path)
+        except Exception:
+            pass
+
     total_time = time.time() - start_wall
     file_size_mb = os.path.getsize(final_output) / (1024 * 1024) if os.path.exists(final_output) else 0
     print(f"[SUCCESS] Master exported to: {final_output} ({file_size_mb:.2f} MB in {total_time:.1f}s)")
