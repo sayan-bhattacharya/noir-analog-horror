@@ -2,7 +2,7 @@ render:
   width: 1280
   height: 720
   fps: 24
-  duration_seconds: 180
+  duration_seconds: 300
   seed: 19940514
   preview_scale: 0.5
   output_format: "mp4"
