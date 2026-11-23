@@ -40,15 +40,15 @@ def render(args):
 
     crf = 16 if args.quality == "final" else (24 if args.preview else 18)
 
-    # Scene duration and start time determination
+    # 7-Act Scene duration and start time determination for 5-minute master
     scene_ranges = {
-        1: (0.0, 15.0),
-        2: (15.0, 35.0),
-        3: (35.0, 65.0),
-        4: (65.0, 95.0),
-        5: (95.0, 125.0),
-        6: (125.0, 165.0),
-        7: (165.0, 180.0)
+        1: (0.0, 45.0),    # Act I: Signal Interrupt & Corrupted TV News
+        2: (45.0, 90.0),   # Act II: Rural Lockdown & The First Call
+        3: (90.0, 140.0),  # Act III: The Mosquito Net Metamorphosis
+        4: (140.0, 185.0), # Act IV: The Uncanny Feline Transmission
+        5: (185.0, 235.0), # Act V: After Midnight, Somewhere Else Abyss Plunge
+        6: (235.0, 275.0), # Act VI: Trinetra Cosmic Dread & The Third Call
+        7: (275.0, 300.0)  # Act VII: Terminal Severance & Theatrical Billboard Credits
     }
 
     if args.scene is not None:
