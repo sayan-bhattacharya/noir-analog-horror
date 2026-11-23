@@ -80,7 +80,7 @@ def render_scene_01(frame: np.ndarray, t: float, params: dict) -> np.ndarray:
         banner_y = int(h * 0.44)
         text_overlay.draw_emergency_banner(
             frame,
-            "ভারত দর্পণ বিশেষ জরুরি সম্প্রচার — পশ্চিমবঙ্গ বিপর্যয় মোকাবিলা",
+            "ভারত দর্পণ বিশেষ জরুরি সম্প্রচার: পশ্চিমবঙ্গ বিপর্যয় মোকাবিলা",
             "[ CODE: 94/ALERT-NISHIDAK  •  SECTOR: BHARAT DARPAN WB ]",
             y_center=banner_y
         )
@@ -111,7 +111,7 @@ def render_scene_01(frame: np.ndarray, t: float, params: dict) -> np.ndarray:
         rule_y = int(h * 0.72)
         text_overlay.draw_text(
             frame,
-            "১. রাত ১২টার পর পরিচিত কণ্ঠে নিশিডাক আসিলে ভুলেও কপাট খুলিবেন না।",
+            "১. রাত ১২টার পর পরিচিত কণ্ঠে ডাক শুনলেও ভুলেও দরজা খুলবেন না।",
             (safe_margin_x, rule_y), font_size=int(h * 0.032), fill_color=(240, 240, 240),
             max_width=max_body_w
         )

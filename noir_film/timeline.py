@@ -8,7 +8,7 @@ Calibrated to the Silent Reading Timing Table & User Creative Direction:
 - 1:07 Mark: Left-hand cast-iron tube-well dripping black fluid frame-by-frame + cloud time-lapse across the moon.
 - 1:49 Mark: Tightly enclosed, closed mosquito net (spooky sheer white fabric cage).
 - 2:02 Mark: Tiny crawling spider swells suddenly into a colossal GIANT spanning the size of the net at the emergency beep.
-- 2:05 Mark: "ত্রিনেত্র প্রস্ফুটিত হইতেছে..." transitions into a blank screen with huge font, followed by slow gradual development of the eye.
+- 2:05 Mark: "ত্রিনেত্র জেগে উঠছে..." transitions into a blank screen with huge font, followed by slow gradual development of the eye.
 - 2:20 - 2:40 Mark: The Black Cat replaced with the uncanny Shadowy Hyper-Object Figure.
 - 2:33 Mark: Full-screen modular Night Sky Cloud Time-Lapse.
 - 4:47 Mark: Minimalist Between the Notes End Credits.
@@ -170,7 +170,7 @@ class NoirTimeline:
         sub_bass = audio_features.get("sub_bass", 0.1)
 
         # =========================================================================
-        # ACT I: THE EMERGENCY BROADCAST INTERRUPTION & ALERT (00:00 – 00:45)
+        # ACT I: THE EMERGENCY BROADCAST INTERRUPTION & ALERT (00:00 - 00:45)
         # =========================================================================
         if t < 6.0:
             # Shot 1: Bharat Darpan station ID (6.0s - Emergency Broadcast)
@@ -205,9 +205,9 @@ class NoirTimeline:
             sig_val = int(np.clip(98 - st * 10, 24, 98))
             frame = news_broadcast.draw_corrupted_news_overlay(
                 frame, t=t,
-                headline="উহারা দরজার বাহিরে অবস্থান করিতেছে",
-                sub_headline="নিশি ডাকের আহ্বান শুনিবামাত্র দরজা বন্ধ রাখুন — কদাচ উত্তর দিবেন না",
-                ticker_text="জরুরি অবস্থা  |  সিগন্যাল ড্রপ  |  কোথাও যাবেন না  |  পর্দায় চোখ রাখবেন না  |  নিশিডাকের আহ্বান গ্রহণ করিবেন না",
+                headline="ওরা দরজার বাইরে দাঁড়িয়ে আছে",
+                sub_headline="নিশিডাক শুনলে ঘরের দরজা বন্ধ রাখুন, কোনো সাড়া দেবেন না",
+                ticker_text="জরুরি অবস্থা  |  সিগন্যাল ড্রপ  |  কোথাও যাবেন না  |  টিভির পর্দায় চোখ রাখবেন না  |  নিশিডাকের ডাকে সাড়া দেবেন না",
                 sector_code="রাত্রি ৩ | ০০০০ ৩",
                 clock_str="03:12 AM",
                 weather_str="24°C",
@@ -229,18 +229,18 @@ class NoirTimeline:
             # Shot 6: High-Readability Broadcast Card 1 (4.0s - Quick Dialogue / Reaction)
             st = t - 37.0
             text_overlay.draw_broadcast_readability_card(
-                frame, "“কে?... কপাটে কে আঘাত করিতেছে?”", "[ Who is knocking at the door? ]", t=st
+                frame, "“কে?... দরজায় কে ধাক্কা দিচ্ছে?”", "[ Who is that?... Who is banging on the door? ]", t=st
             )
 
         elif 41.0 <= t < 45.0:
             # Shot 7: High-Readability Broadcast Card 2 (4.0s - Normal Dialogue Card)
             st = t - 41.0
             text_overlay.draw_broadcast_readability_card(
-                frame, "“কপাট খুলিবেন না। উহা আপনার মাতা নহে।”", "[ Do not open. That is not your mother. ]", t=st
+                frame, "“দরজা খুলবেন না। ওটা আপনার মা নয়।”", "[ Do not open the door. That is not your mother. ]", t=st
             )
 
         # =========================================================================
-        # ACT II: THE RURAL LOCKDOWN & THE FIRST CALL (00:45 – 01:30)
+        # ACT II: THE RURAL LOCKDOWN & THE FIRST CALL (00:45 - 01:30)
         # =========================================================================
         elif 45.0 <= t < 53.0:
             # Shot 8: Solitary Farmhouse in Moonlit Plain (8.0s - Atmospheric B-Roll)
@@ -256,33 +256,33 @@ class NoirTimeline:
             banana_trees.draw_banana_tree(frame, int(width * 0.88), height, t, scale=0.85)
             text_overlay.draw_rule_card(
                 frame, "[বিধি ১] (RULE 1)",
-                "রাত ১২টার পর কলাবাগান থেকে চেনা কণ্ঠে নিশিডাক শুনলে দরজা খুলবেন না।",
-                "DO NOT ANSWER FAMILIAR VOICES CALLING FROM THE BANANA GROVES.",
+                "রাত বারোটার পর কলাবাগান থেকে চেনা গলায় ডাকলেও দরজা খুলবেন না।",
+                "DO NOT OPEN THE DOOR IF FAMILIAR VOICES CALL FROM THE BANANA TREES AFTER MIDNIGHT.",
                 y_start=int(height * 0.70)
             )
 
         elif 60.0 <= t < 67.0:
-            # Shot 10: 1:07 MARK — Left-Hand Cast-Iron Tube-Well with Dripping Black Fluid & Cloud Time-Lapse
+            # Shot 10: 1:07 MARK - Left-Hand Cast-Iron Tube-Well with Dripping Black Fluid & Cloud Time-Lapse
             st = t - 60.0
             frame[:] = zoom_pan(self.get_plate("homestead", width, height), st, 7.0, 1.0, 1.05)
             banana_trees.draw_banana_tree(frame, int(width * 0.88), height, t, scale=0.85, wind_strength=0.6)
             tubewell_scene.draw_tubewell_scene_0107(frame, t, width, height)
 
         elif 67.0 <= t < 74.0:
-            # Shot 11: Macro B-Roll — Weathered Teak Door & Rusted Latch (7.0s - Macro B-Roll)
+            # Shot 11: Macro B-Roll - Weathered Teak Door & Rusted Latch (7.0s - Macro B-Roll)
             st = t - 67.0
             frame[:] = zoom_pan(self.get_plate("door_latch", width, height), st, 7.0, 1.0, 1.08)
 
         elif 74.0 <= t < 80.0:
-            # Shot 12: Broadcast Card 3 — The First Call (6.0s - Normal Dialogue Card)
+            # Shot 12: Broadcast Card 3 - The First Call (6.0s - Normal Dialogue Card)
             st = t - 74.0
             text_overlay.draw_broadcast_readability_card(
-                frame, "প্রথম আহ্বান: “বিমল... ও বিমল... একবারটি বাহিরে আয়...”",
-                "[ The First Call: 'Bimal... O Bimal... come outside just once...' ]", t=st
+                frame, "প্রথম ডাক: “বিমল... ও বিমল... একবার বাইরে আয় না রে...”",
+                "[ First Call: 'Bimal... O Bimal... come outside just once...' ]", t=st
             )
 
         elif 80.0 <= t < 86.0:
-            # Shot 13: Archival B-Roll — 1994 Yellowed Bengali Newspaper Cutting (6.0s - Hidden Message / Lore)
+            # Shot 13: Archival B-Roll - 1994 Yellowed Bengali Newspaper Cutting (6.0s - Hidden Message / Lore)
             st = t - 80.0
             frame[:] = zoom_pan(self.get_plate("newspaper_cutting", width, height), st, 6.0, 1.0, 1.07)
             text_overlay.draw_text(
@@ -291,16 +291,16 @@ class NoirTimeline:
             )
 
         elif 86.0 <= t < 90.0:
-            # Shot 14: Macro B-Roll — Rotary Telephone Off the Hook (4.0s - Normal Dialogue Card)
+            # Shot 14: Macro B-Roll - Rotary Telephone Off the Hook (4.0s - Normal Dialogue Card)
             st = t - 86.0
             frame[:] = zoom_pan(self.get_plate("telephone", width, height), st, 4.0, 1.0, 1.06, pan_y=10)
             text_overlay.draw_text(
-                frame, "“সংযোগ বিচ্ছিন্ন। টেলিফোন ধরিবার কেহ নাই।”",
+                frame, "“লাইন কেটে গেছে। ফোন তোলার মতো কেউ বেঁচে নেই।”",
                 (width // 2, int(height * 0.86)), font_size=int(height * 0.032), fill_color=(230, 230, 230), anchor="mm"
             )
 
         # =========================================================================
-        # ACT III: THE MOSQUITO NET METAMORPHOSIS (01:30 – 02:20)
+        # ACT III: THE MOSQUITO NET METAMORPHOSIS (01:30 - 02:20)
         # =========================================================================
         elif 90.0 <= t < 97.0:
             # Shot 15: Interior Bedroom draped in sheer white Mosquito Net (7.0s - Atmospheric B-Roll)
@@ -313,27 +313,27 @@ class NoirTimeline:
             frame[:] = self.get_plate("bedroom", width, height)
             text_overlay.draw_rule_card(
                 frame, "[বিধি ২] (RULE 2)",
-                "ঘরের মেঝেতে খোলস ও কীটপতঙ্গের পা গজাতে শুরু করলে শান্ত থাকুন।",
-                "IF CHITINOUS EXOSKELETON EMERGES: REMAIN FLAT UPON THE RED STONE.",
+                "ঘরের মেঝেতে পোকার পা বেরোতে শুরু করলে শান্ত থাকুন। নড়াচড়া করবেন না।",
+                "IF INSECT LEGS EMERGE FROM THE FLOOR: STAY STILL. DO NOT MOVE.",
                 y_start=int(height * 0.70)
             )
 
         elif 104.0 <= t < 112.0:
-            # Shot 17: 1:49 MARK — TIGHTLY ENCLOSED MOSQUITO NET (Spooky sheer fabric cage)
+            # Shot 17: 1:49 MARK - TIGHTLY ENCLOSED MOSQUITO NET (Spooky sheer fabric cage)
             st = t - 104.0
             frame[:] = zoom_pan(self.get_plate("bedroom", width, height), st, 8.0, 1.0, 1.06)
             draw_enclosed_mosquito_net(frame, width, height, t)
 
         elif 112.0 <= t < 117.0:
-            # Shot 18: Broadcast Card 4 — The Second Call (5.0s - Normal Dialogue Card)
+            # Shot 18: Broadcast Card 4 - The Second Call (5.0s - Normal Dialogue Card)
             st = t - 112.0
             text_overlay.draw_broadcast_readability_card(
-                frame, "দ্বিতীয় আহ্বান: “দুয়ার খোল বাছা... মা আসিয়াছি... ভিজিয়া যাইতেছি রে...”",
-                "[ The Second Call: 'Open the door child... Mother has come home...' ]", t=st
+                frame, "দ্বিতীয় ডাক: “দরজা খোল বাবা... মা এসেছি... বৃষ্টিতে ভিজে যাচ্ছি রে...”",
+                "[ Second Call: 'Open the door child... Mother has come home... I am getting drenched in the rain...' ]", t=st
             )
 
         elif 117.0 <= t < 125.0:
-            # Shot 19: 2:02 MARK — KAFKAESQUE SPIDER ERUPTION AT EMERGENCY BEEP SWELL
+            # Shot 19: 2:02 MARK - KAFKAESQUE SPIDER ERUPTION AT EMERGENCY BEEP SWELL
             st = t - 117.0
             frame[:] = self.get_plate("bedroom", width, height)
             draw_enclosed_mosquito_net(frame, width, height, t)
@@ -353,11 +353,11 @@ class NoirTimeline:
                 )
 
         elif 125.0 <= t < 129.0:
-            # Shot 20A: 2:05 MARK — "ত্রিনেত্র প্রস্ফুটিত হইতেছে..." HUGE TYPOGRAPHY ON BLANK SCREEN
+            # Shot 20A: 2:05 MARK - 'ত্রিনেত্র জেগে উঠছে...' HUGE TYPOGRAPHY ON BLANK SCREEN
             st = t - 125.0
             text_overlay.draw_broadcast_readability_card(
-                frame, "“ত্রিনেত্র প্রস্ফুটিত হইতেছে...”",
-                "[ The Third Eye is Blossoming... ]", t=st
+                frame, "“ত্রিনেত্র জেগে উঠছে...”",
+                "[ The Third Eye is awakening... ]", t=st
             )
 
         elif 129.0 <= t < 132.0:
@@ -370,15 +370,15 @@ class NoirTimeline:
             cv2.addWeighted(overlay, eye_opacity, frame, 1.0 - eye_opacity, 0, frame)
 
         elif 132.0 <= t < 140.0:
-            # Shot 21: High-Readability Card 5 — Body Measurement (8.0s)
+            # Shot 21: High-Readability Card 5 - Body Measurement (8.0s)
             st = t - 132.0
             text_overlay.draw_broadcast_readability_card(
-                frame, "“উহা আপনার মাতা নহে...\nউহা আপনার দেহের মাপ লইতেছে...”",
-                "[ That is not your mother... It is taking the measurement of your physical form... ]", t=st
+                frame, "“ওটা আপনার মা নয়...\nওটা আপনার শরীরের মাপ নিচ্ছে...”",
+                "[ That is not your mother... It is taking the measurement of your body... ]", t=st
             )
 
         # =========================================================================
-        # ACT IV: THE UNCANNY SHADOWY HYPER-OBJECT TRANSMISSION (02:20 – 03:05)
+        # ACT IV: THE UNCANNY SHADOWY HYPER-OBJECT TRANSMISSION (02:20 - 03:05)
         # =========================================================================
         elif 140.0 <= t < 147.0:
             # Shot 22: Shadowy Hyper-Object Figure perched on Split-Bamboo Fence (no cat)
@@ -395,13 +395,13 @@ class NoirTimeline:
             hulo_cat.draw_shadowy_figure(frame, t, cx=int(width * 0.52), cy=int(height * 0.68), stretch_factor=0.0)
             text_overlay.draw_rule_card(
                 frame, "[বিধি ৩] (RULE 3)",
-                "বাঁশের বেড়ায় অবস্থানরত ছায়ামূর্তির চোখের দিকে তাকাবেন না।",
-                "DO NOT GAZE INTO THE EYES OF THE SHADOWY ENTITY UPON THE RAIL.",
+                "বাঁশের বেড়ায় বসে থাকা ছায়ার চোখের দিকে একদম তাকাবেন না।",
+                "DO NOT LOOK INTO THE EYES OF THE SHADOW PERCHED ON THE FENCE.",
                 y_start=int(height * 0.70)
             )
 
         elif 154.0 <= t < 162.0:
-            # Shot 24: 2:33 MARK — FULL-SCREEN NIGHT SKY CLOUD TIME-LAPSE & ELONGATING SHADOW COLUMN
+            # Shot 24: 2:33 MARK - FULL-SCREEN NIGHT SKY CLOUD TIME-LAPSE & ELONGATING SHADOW COLUMN
             st = t - 154.0
             # Continuous multi-layered volumetric cloud time-lapse across the moon
             cloud_timelapse.render_cloud_timelapse_sky(frame, t, width, height, cloud_speed=50.0)
@@ -410,11 +410,11 @@ class NoirTimeline:
             hulo_cat.draw_shadowy_figure(frame, t, cx=int(width * 0.52), cy=int(height * 0.68), stretch_factor=stretch)
 
         elif 162.0 <= t < 169.0:
-            # Shot 25: Broadcast Card 6 — Shadowy Entity Intertitle (7.0s)
+            # Shot 25: Broadcast Card 6 - Shadowy Entity Intertitle (7.0s)
             st = t - 162.0
             text_overlay.draw_broadcast_readability_card(
-                frame, "“ছায়ামূর্তিটি ডাকিতেছে না... আকাশ উহার কণ্ঠে আপনার নাম উচ্চারণ করিতেছে...”",
-                "[ The shadowy entity does not speak... The sky speaks your name through its void... ]", t=st
+                frame, "“ছায়ামূর্তিটা ডাকছে না... আকাশ ওর গলায় আপনার নাম ধরে ডাকছে...”",
+                "[ The shadow is not calling you... The sky is using its voice to speak your name... ]", t=st
             )
 
         elif 169.0 <= t < 176.0:
@@ -422,7 +422,7 @@ class NoirTimeline:
             st = t - 169.0
             frame[:] = zoom_pan(self.get_plate("protective_occult_wall", width, height), st, 7.0, 1.0, 1.07)
             text_overlay.draw_text(
-                frame, "প্রতিরক্ষা রেখা ভঙ্গ হইয়াছে",
+                frame, "সুরক্ষা বলয় ভেঙে গেছে",
                 (width // 2, int(height * 0.88)), font_size=int(height * 0.034), fill_color=(235, 70, 70), anchor="mm"
             )
 
@@ -435,18 +435,18 @@ class NoirTimeline:
             # Shot 28: Quick Dialogue Countdown (3.0s - Quick Dialogue / Reaction)
             st = t - 182.0
             text_overlay.draw_broadcast_readability_card(
-                frame, "“তৃতীয় আহ্বান সমাসন্ন...”", "[ The Third Call is imminent... ]", t=st
+                frame, "“শেষ ডাক আর কিছুক্ষণেই...”", "[ The Final Call is coming... ]", t=st
             )
 
         # =========================================================================
-        # ACT V: BETWEEN THE NOTES — THE ABYSS PLUNGE (03:05 – 03:55)
+        # ACT V: BETWEEN THE NOTES - THE ABYSS PLUNGE (03:05 - 03:55)
         # =========================================================================
         elif 185.0 <= t < 194.0:
             # Shot 29: Between the Notes Interstitial Slate (9.0s - High Readability Broadcast Card)
             st = t - 185.0
             text_overlay.draw_broadcast_readability_card(
-                frame, "বিটুইন দ্য নোটস — অ্যানালগ হরর চলচ্চিত্র\nপর্ব শূন্য: মহাকর্ষের বিলুপ্তি",
-                "[ BETWEEN THE NOTES — AN ANALOG HORROR FILM / EPISODE ZERO: GRAVITATIONAL EXTINCTION ]", t=st
+                frame, "বিটুইন দ্য নোটস: অ্যানালগ হরর চলচ্চিত্র\nপর্ব শূন্য: মহাকর্ষের পতন",
+                "[ BETWEEN THE NOTES: AN ANALOG HORROR FILM / EPISODE ZERO: FALL OF GRAVITY ]", t=st
             )
 
         elif 194.0 <= t < 205.0:
@@ -464,7 +464,7 @@ class NoirTimeline:
             # Shot 32: Archival Decoupling Log (9.0s - Hidden Message / Lore)
             st = t - 216.0
             frame = cosmic.draw_after_midnight_abyss(frame, st + 10.0, sub_bass=sub_bass)
-            text_overlay.draw_text(frame, "সতর্কতা: মাধ্যাকর্ষণ ভেক্টর বিচ্ছিন্ন হইয়াছে।", (width // 2, int(height * 0.16)),
+            text_overlay.draw_text(frame, "সতর্কতা: মাধ্যাকর্ষণ আর কাজ করছে না।", (width // 2, int(height * 0.16)),
                                    font_size=int(height * 0.036), fill_color=(245, 60, 60), anchor="mm")
             text_overlay.draw_text(frame, "WARNING: GRAVITATIONAL VECTOR PERMANENTLY DECOUPLED.", (width // 2, int(height * 0.22)),
                                    font_size=int(height * 0.022), fill_color=(220, 220, 220), anchor="mm")
@@ -478,7 +478,7 @@ class NoirTimeline:
             frame = distortion.apply_gravity_warp(frame, t, intensity=0.35)
 
         # =========================================================================
-        # ACT VI: TRINETRA — TANTRIC COSMIC DREAD & THE THIRD CALL (03:55 – 04:35)
+        # ACT VI: TRINETRA - TANTRIC COSMIC DREAD & THE THIRD CALL (03:55 - 04:35)
         # =========================================================================
         elif 235.0 <= t < 244.0:
             # Shot 34: Celestial Third Eye (ত্রিনেত্র) in Monsoon Clouds (9.0s - Cosmic B-Roll)
@@ -489,14 +489,14 @@ class NoirTimeline:
             banana_trees.draw_banana_tree(frame, int(width * 0.92), height, t, scale=0.8, wind_strength=0.5)
 
         elif 244.0 <= t < 252.0:
-            # Shot 35: 4:11 MARK — SINISTER BLOOD-RED EYE LOOK & FINAL PROHIBITION (8.0s)
+            # Shot 35: 4:11 MARK - SINISTER BLOOD-RED EYE LOOK & FINAL PROHIBITION (8.0s)
             st = t - 244.0
             frame[:] = self.get_plate("cosmic_eye", width, height)
             trinetra_eye.draw_trinetra_eye(frame, width // 2, int(height * 0.44), t, scale=1.20, dilation_extra=sub_bass, sinister_red=1.0)
             text_overlay.draw_rule_card(
                 frame, "[চূড়ান্ত নিষেধ] (RULE 4)",
-                "আকাশের রক্তিম নয়নের দিকে তাকাবেন না। উহা আপনাকে বহু পূর্বেই প্রত্যক্ষ করিয়াছে।",
-                "DO NOT GAZE INTO THE CRIMSON EYE. IT HAS WITNESSED YOU LONG BEFORE TONIGHT.",
+                "আকাশের লাল চোখের দিকে তাকাবেন না। ও অনেক আগেই আপনাকে দেখে ফেলেছে।",
+                "DO NOT GAZE INTO THE RED EYE IN THE SKY. IT SAW YOU LONG AGO.",
                 y_start=int(height * 0.70)
             )
 
@@ -511,8 +511,8 @@ class NoirTimeline:
             # Shot 37: Final Threat / Climax Reveal Card (10.0s - Final Threat / Reveal)
             st = t - 263.0
             text_overlay.draw_broadcast_readability_card(
-                frame, "“তৃতীয় আহ্বান সম্পূর্ণ হইয়াছে।\nআপনি ইতোমধ্যে উত্তর দিয়াছেন।”",
-                "[ The Third Call has completed. You have already answered. ]", t=st
+                frame, "“তৃতীয় ডাক শেষ।\nআপনি আগেই উত্তর দিয়ে ফেলেছেন।”",
+                "[ The Third Call is complete. You have already answered. ]", t=st
             )
 
         elif 273.0 <= t < 275.0:
@@ -529,14 +529,14 @@ class NoirTimeline:
                 frame[:] = self.get_plate("macro_pupil_tv_reflection", width, height)
 
         # =========================================================================
-        # ACT VII: TERMINAL SEVERANCE & MINIMALIST END CREDITS (04:35 – 05:00)
+        # ACT VII: TERMINAL SEVERANCE & MINIMALIST END CREDITS (04:35 - 05:00)
         # =========================================================================
         elif 275.0 <= t < 282.0:
             # Shot 39: Empty Cot Aftermath (7.0s - Emergency Broadcast Decree)
             st = t - 275.0
             frame[:] = zoom_pan(self.get_plate("empty_cot", width, height), st, 7.0, 1.0, 1.05)
             text_overlay.draw_text(
-                frame, "দূরদর্শন সম্প্রচার অনির্দিষ্টকালের জন্য বন্ধ থাকিবে।",
+                frame, "টেলিভিশন সম্প্রচার অনির্দিষ্টকালের জন্য বন্ধ থাকবে।",
                 (width // 2, int(height * 0.88)), font_size=int(height * 0.034), fill_color=(240, 240, 240), anchor="mm"
             )
 

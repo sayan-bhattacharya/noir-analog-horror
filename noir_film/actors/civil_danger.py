@@ -8,7 +8,7 @@ Matches user reference Image 3:
     DO NOT ANSWER THE CALLING
 - Bilingual Bengali typography:
     নাগরিক বিপদ সতর্কতা:
-    পর্দায় দৃষ্টিপাত করিবেন না
+    টিভির পর্দায় তাকাবেন না
 - Subtle CRT phosphor breathing, scanline tear, and VCR distortion
 """
 import math
@@ -70,7 +70,7 @@ def draw_civil_danger_screen(frame: np.ndarray, t: float, sub_bass: float = 0.1)
         anchor="mm"
     )
     text_overlay.draw_text(
-        frame, "পর্দায় দৃষ্টিপাত করিবেন না — কপাট রুদ্ধ রাখুন",
+        frame, "টিভির পর্দায় তাকাবেন না, ঘরের দরজা বন্ধ রাখুন",
         (w // 2, ben_y2),
         font_size=int(h * 0.034),
         fill_color=(245, 220, 220),

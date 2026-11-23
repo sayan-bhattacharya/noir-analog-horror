@@ -102,8 +102,8 @@ def render_noir_frame(plates, t, width=1280, height=720, sub_bass=0.1):
     elif 10.5 <= t < 13.0:
         st = t - 10.5
         actors.draw_silent_film_intertitle(frame,
-                                          "“কে?... কপাটে কে আঘাত করিতেছে?”",
-                                          "[Who is knocking at the door?]", t=st)
+                                          "“কে?... দরজায় কে ধাক্কা দিচ্ছে?”",
+                                          "[Who is that?... Who is banging on the door?]", t=st)
 
     # SHOT 6 (13.0s - 15.5s): B-Roll Cutaway 2: Misty Bamboo Grove (Banshjhar)
     elif 13.0 <= t < 15.5:
@@ -114,8 +114,8 @@ def render_noir_frame(plates, t, width=1280, height=720, sub_bass=0.1):
     elif 15.5 <= t < 18.0:
         st = t - 15.5
         actors.draw_silent_film_intertitle(frame,
-                                          "“কপাট খুলিবেন না। উহা আপনার মাতা নহে।”",
-                                          "[Do not open. That is not your mother.]", t=st)
+                                          "“দরজা খুলবেন না। ওটা আপনার মা নয়।”",
+                                          "[Do not open the door. That is not your mother.]", t=st)
 
     # SHOT 8 (18.0s - 21.0s): Wide Establishing: Nowhere Rural Farmhouse
     elif 18.0 <= t < 21.0:
@@ -133,8 +133,8 @@ def render_noir_frame(plates, t, width=1280, height=720, sub_bass=0.1):
     elif 23.5 <= t < 26.0:
         st = t - 23.5
         actors.draw_silent_film_intertitle(frame,
-                                          "“টেলিফোন ধরিবার কেহ নাই। সংযোগ বিচ্ছিন্ন।”",
-                                          "[There is no one to answer. The line is dead.]", t=st)
+                                          "“লাইন কেটে গেছে। ফোন তোলার মতো কেউ বেঁচে নেই।”",
+                                          "[The line is dead. No one is alive to pick up.]", t=st)
 
     # SHOT 11 (26.0s - 29.0s): Photorealistic Bedroom Draped in Real Mosquito Net (Moshari)
     elif 26.0 <= t < 29.0:
@@ -145,8 +145,8 @@ def render_noir_frame(plates, t, width=1280, height=720, sub_bass=0.1):
     elif 29.0 <= t < 31.5:
         st = t - 29.0
         actors.draw_silent_film_intertitle(frame,
-                                          "“আমি মেঝে ছাড়িয়া উঠিতে পারিতেছি না...”",
-                                          "[I cannot rise from the floor...]", t=st)
+                                          "“আমি মেঝের ওপর থেকে উঠতে পারছি না...”",
+                                          "[I cannot get up from the floor...]", t=st)
 
     # SHOT 13 (31.5s - 36.5s): THE TWILIGHT ZONE OPTICAL SPIRAL ABYSS (First Descent)
     elif 31.5 <= t < 36.5:
@@ -171,8 +171,8 @@ def render_noir_frame(plates, t, width=1280, height=720, sub_bass=0.1):
     elif 38.5 <= t < 41.0:
         st = t - 38.5
         actors.draw_silent_film_intertitle(frame,
-                                          "“নিশিডাক দ্বিতীয়বার উচ্চারিত হইল।”",
-                                          "[The Nishidak called for the second time.]", t=st)
+                                          "“নিশিডাক দ্বিতীয়বার ডেকে উঠেছে।”",
+                                          "[The Nishidak has called for the second time.]", t=st)
 
     # SHOT 16 (41.0s - 44.0s): Rural Bamboo Fence & The Black Tomcat (Eyes Glowing)
     elif 41.0 <= t < 44.0:
@@ -189,10 +189,10 @@ def render_noir_frame(plates, t, width=1280, height=720, sub_bass=0.1):
 
     # SHOT 18 (47.0s - 49.5s): Silent Film Intertitle 6
     elif 47.0 <= t < 49.5:
-        st = t - 47.0
+        st = t - 49.5
         actors.draw_silent_film_intertitle(frame,
-                                          "“উহার দৃষ্টি আকাশস্থ নয়নের প্রতি নিবদ্ধ।”",
-                                          "[Its gaze is locked upon the cosmic Eye.]", t=st)
+                                          "“ওর চোখ আকাশের লাল চোখের দিকে স্থির হয়ে আছে।”",
+                                          "[Its eyes are locked onto the red Eye in the sky.]", t=st)
 
     # SHOT 19 (49.5s - 54.0s): Colossal Cosmic Third-Eye Over Bengal Palms
     elif 49.5 <= t < 54.0:
@@ -210,8 +210,8 @@ def render_noir_frame(plates, t, width=1280, height=720, sub_bass=0.1):
     elif 63.0 <= t < 66.0:
         st = t - 63.0
         actors.draw_silent_film_intertitle(frame,
-                                          "“নয়নটি আপনাকে বহু পূর্বেই প্রত্যক্ষ করিয়াছে।”",
-                                          "[The Eye has witnessed you long before tonight.]", t=st)
+                                          "“চোখটা আপনাকে অনেক আগেই দেখে ফেলেছে।”",
+                                          "[The Eye saw you long ago.]", t=st)
 
     # SHOT 22 (66.0s - 74.0s): Doordarshan CRT Terminal Decree (Unending Broadcast)
     elif 66.0 <= t < 74.0:
@@ -220,9 +220,9 @@ def render_noir_frame(plates, t, width=1280, height=720, sub_bass=0.1):
         actors.draw_doordarshan_logo(frame, width // 2, 110, radius=42, t=t)
         actors.draw_bengali_text(frame, "ভারত দর্পণ কেন্দ্র কলকাতা", (width // 2, 170),
                                  font_size=22, fill_color=(245, 205, 55), anchor="mm")
-        actors.draw_bengali_text(frame, "সম্প্রচার সমাপ্ত হইবে না", (width // 2, height // 2 + 10),
+        actors.draw_bengali_text(frame, "সম্প্রচার বন্ধ হবে না", (width // 2, height // 2 + 10),
                                  font_size=34, fill_color=(245, 60, 60), anchor="mm")
-        actors.draw_bengali_text(frame, "এই জরুরি সম্প্রচার নিরবচ্ছিন্নভাবে চলিবে। কপাট খুলিবেন না।",
+        actors.draw_bengali_text(frame, "এই জরুরি সম্প্রচার একটানা চলবে। দরজা খুলবেন না।",
                                  (width // 2, height // 2 + 65), font_size=20, fill_color=(220, 220, 220), anchor="mm")
 
     # SHOT 23 (74.0s - 77.5s): Rapid Flash-Cut Cadence Before Severance

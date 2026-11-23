@@ -46,7 +46,7 @@ def render(args):
         2: (45.0, 90.0),   # Act II: Rural Lockdown & The First Call
         3: (90.0, 140.0),  # Act III: The Mosquito Net Metamorphosis
         4: (140.0, 185.0), # Act IV: The Uncanny Feline Transmission
-        5: (185.0, 235.0), # Act V: After Midnight, Somewhere Else Abyss Plunge
+        5: (185.0, 235.0), # Act V: Between the Notes Abyss Plunge
         6: (235.0, 275.0), # Act VI: Trinetra Cosmic Dread & The Third Call
         7: (275.0, 300.0)  # Act VII: Terminal Severance & Theatrical Billboard Credits
     }
