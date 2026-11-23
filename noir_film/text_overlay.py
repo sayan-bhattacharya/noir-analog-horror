@@ -285,11 +285,32 @@ def draw_rule_card(frame: np.ndarray,
     draw = ImageDraw.Draw(pil_img)
 
     content_max_w = safe_w - int(w * 0.04)
-    f_id, _ = fit_font(rule_id, content_max_w, int(h * 0.034), min_size=18)
+    id_size = int(h * 0.034)
     f_bn, bn_size = fit_font(text_bengali, content_max_w, int(h * 0.040), min_size=20)
 
-    # Draw Rule ID
-    draw.text((x1 + 20, y_start + 6), rule_id, font=f_id, fill=(90, 235, 120))
+    # Draw Rule ID: cleanly split Bengali and Latin parts so zero tofu boxes occur
+    if "(" in rule_id and ")" in rule_id and has_bengali(rule_id):
+        parts = rule_id.split("(")
+        bn_part = parts[0].strip()
+        en_part = "(" + parts[1].strip()
+        offset_x = 0
+        if bengali_shaper.is_shaping_available():
+            bengali_shaper.draw_shaped_text(pil_img, bn_part, (x1 + 20, y_start + 6), BENGALI_FONT_PATH, id_size, fill_color=(90, 235, 120), anchor="la", with_shadow=False)
+            _, pw, _ = bengali_shaper.render_shaped_patch(bn_part, BENGALI_FONT_PATH, id_size)
+            offset_x = pw + 12
+        else:
+            f_bn_id = get_bengali_font(id_size)
+            draw.text((x1 + 20, y_start + 6), bn_part, font=f_bn_id, fill=(90, 235, 120))
+            offset_x = int(draw.textlength(bn_part, font=f_bn_id)) + 12
+
+        f_en_id = get_english_font(id_size)
+        draw.text((x1 + 20 + offset_x, y_start + 6), en_part, font=f_en_id, fill=(90, 235, 120))
+    else:
+        if has_bengali(rule_id) and bengali_shaper.is_shaping_available():
+            bengali_shaper.draw_shaped_text(pil_img, rule_id, (x1 + 20, y_start + 6), BENGALI_FONT_PATH, id_size, fill_color=(90, 235, 120), anchor="la", with_shadow=False)
+        else:
+            f_id, _ = fit_font(rule_id, content_max_w, id_size, min_size=18)
+            draw.text((x1 + 20, y_start + 6), rule_id, font=f_id, fill=(90, 235, 120))
     # Draw Bengali Rule Text in bold white with drop shadow
     shaped_rule = False
     if bengali_shaper.is_shaping_available() and has_bengali(text_bengali):
