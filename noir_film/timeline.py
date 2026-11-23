@@ -78,28 +78,23 @@ def zoom_pan(plate, local_t, duration, zoom_start=1.0, zoom_end=1.06, pan_x=0, p
 
 def draw_enclosed_mosquito_net(frame: np.ndarray, width: int, height: int, t: float):
     """
-    Renders tightly enclosed sheer white cotton mosquito net (moshari):
-    Not an open triangle tent, but a vertical sheer fabric enclosure tightly tucked under the cot.
+    Subtle atmospheric sheer textile breathing and claustrophobic vignette over the bedroom plate.
+    Preserves the authentic photorealistic plate while adding eerie claustrophobic enclosure.
     """
-    overlay = frame.copy()
-    # Vertical sheer curtains hanging straight down from frame ties
-    for x in range(int(width * 0.12), int(width * 0.88), 18):
-        sway = math.sin(t * 1.2 + x * 0.05) * 2.0
-        cv2.line(overlay, (int(x + sway), int(height * 0.15)),
-                 (int(x + sway), int(height * 0.85)), (225, 230, 235), 14, cv2.LINE_AA)
+    # 1. Subtle rhythmic breathing vignette (claustrophobic enclosure)
+    pulse = math.sin(t * 1.5) * 0.04
+    h, w = frame.shape[:2]
+    Y, X = np.ogrid[:h, :w]
+    center_y, center_x = h / 2.0, w / 2.0
+    dist_sq = ((X - center_x) / (w * 0.55)) ** 2 + ((Y - center_y) / (h * 0.55)) ** 2
+    vignette = np.clip(1.0 - (dist_sq * (0.42 + pulse)), 0.35, 1.0)
+    for c in range(3):
+        frame[:, :, c] = (frame[:, :, c] * vignette).astype(np.uint8)
 
-    # Top binding horizontal seam
-    cv2.line(overlay, (int(width * 0.10), int(height * 0.15)),
-             (int(width * 0.90), int(height * 0.15)), (240, 240, 245), 4, cv2.LINE_AA)
-    # Bottom hem tucked under mattress
-    cv2.line(overlay, (int(width * 0.10), int(height * 0.85)),
-             (int(width * 0.90), int(height * 0.85)), (180, 185, 190), 3, cv2.LINE_AA)
-
-    # 4 corner tie-cords reaching into dark ceiling
-    cv2.line(overlay, (int(width * 0.12), int(height * 0.15)), (int(width * 0.02), 0), (200, 200, 210), 2, cv2.LINE_AA)
-    cv2.line(overlay, (int(width * 0.88), int(height * 0.15)), (int(width * 0.98), 0), (200, 200, 210), 2, cv2.LINE_AA)
-
-    cv2.addWeighted(overlay, 0.45, frame, 0.55, 0, frame)
+    # 2. Ultra-fine micro textile weave shimmer (fine 1-pixel sheer mesh grain)
+    weave = (np.sin(X * 1.2) * np.sin(Y * 1.2) * 4.0).astype(np.int16)
+    adjusted = np.clip(frame.astype(np.int16) + weave[:, :, None], 0, 255).astype(np.uint8)
+    frame[:] = adjusted
 
 
 class NoirTimeline:
