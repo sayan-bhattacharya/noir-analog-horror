@@ -370,11 +370,11 @@ class NoirTimeline:
             cv2.addWeighted(overlay, eye_opacity, frame, 1.0 - eye_opacity, 0, frame)
 
         elif 132.0 <= t < 140.0:
-            # Shot 21: High-Readability Card 5 — Chitin Measurement (8.0s)
+            # Shot 21: High-Readability Card 5 — Body Measurement (8.0s)
             st = t - 132.0
             text_overlay.draw_broadcast_readability_card(
-                frame, "“উহা আপনার মাতা নহে...\nউহা আপনার চর্মের মাপ লইতেছে...”",
-                "[ That is not your mother... It is taking the measurement of your skin... ]", t=st
+                frame, "“উহা আপনার মাতা নহে...\nউহা আপনার দেহের মাপ লইতেছে...”",
+                "[ That is not your mother... It is taking the measurement of your physical form... ]", t=st
             )
 
         # =========================================================================
@@ -439,19 +439,15 @@ class NoirTimeline:
             )
 
         # =========================================================================
-        # ACT V: AFTER MIDNIGHT, SOMEWHERE ELSE — THE ABYSS PLUNGE (03:05 – 03:55)
+        # ACT V: BETWEEN THE NOTES — THE ABYSS PLUNGE (03:05 – 03:55)
         # =========================================================================
         elif 185.0 <= t < 194.0:
-            # Shot 29: Bharat Darpan Interstitial Slate (9.0s - Hidden Message / Lore)
+            # Shot 29: Between the Notes Interstitial Slate (9.0s - High Readability Broadcast Card)
             st = t - 185.0
-            frame[:, :] = [16, 12, 36]
-            doordarshan_alert.draw_bharat_darpan_logo(frame, width // 2, int(height * 0.28), radius=int(height * 0.10), t=t)
-            text_overlay.draw_text(frame, "মধ্যরাতের পর, অন্য কোথাও", (width // 2, int(height * 0.52)),
-                                   font_size=int(height * 0.046), fill_color=(245, 205, 55), anchor="mm")
-            text_overlay.draw_text(frame, "AFTER MIDNIGHT, SOMEWHERE ELSE", (width // 2, int(height * 0.61)),
-                                   font_size=int(height * 0.026), fill_color=(210, 210, 210), anchor="mm")
-            text_overlay.draw_text(frame, "পর্ব শূন্য: মহাকর্ষের বিলুপ্তি  •  EPISODE ZERO", (width // 2, int(height * 0.70)),
-                                   font_size=int(height * 0.024), fill_color=(190, 60, 60), anchor="mm")
+            text_overlay.draw_broadcast_readability_card(
+                frame, "বিটুইন দ্য নোটস — অ্যানালগ হরর চলচ্চিত্র\nপর্ব শূন্য: মহাকর্ষের বিলুপ্তি",
+                "[ BETWEEN THE NOTES — AN ANALOG HORROR FILM / EPISODE ZERO: GRAVITATIONAL EXTINCTION ]", t=st
+            )
 
         elif 194.0 <= t < 205.0:
             # Shot 30: Hypnotic Optical Spiral Abyss (11.0s - Abyss B-Roll)
@@ -567,15 +563,20 @@ class NoirTimeline:
         # =========================================================================
         # UNIFIED CRT & VHS POST-PROCESSING PIPELINE
         # =========================================================================
-        # Check if frame is a high-readability text card or credits
+        # Check if frame is a high-readability text card, rule card, slate, or credits
         is_text_card = (
+            (t < 6.0) or
             (37.0 <= t < 45.0) or
+            (53.0 <= t < 60.0) or
             (74.0 <= t < 80.0) or
+            (97.0 <= t < 104.0) or
             (112.0 <= t < 117.0) or
             (125.0 <= t < 129.0) or
             (132.0 <= t < 140.0) or
+            (147.0 <= t < 154.0) or
             (162.0 <= t < 169.0) or
-            (182.0 <= t < 185.0) or
+            (182.0 <= t < 194.0) or
+            (244.0 <= t < 252.0) or
             (263.0 <= t < 273.0) or
             (t >= 287.0)
         )
