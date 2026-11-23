@@ -11,6 +11,7 @@ import math
 import cv2
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
+from . import bengali_shaper
 
 _CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 FONTS_DIR = os.path.join(_CUR_DIR, "fonts")
@@ -103,6 +104,17 @@ def draw_text(img: np.ndarray,
     """Renders crisp text onto an OpenCV uint8 image via PIL with language detection and clean contrast."""
     if not text:
         return img
+
+    if has_bengali(text) and bengali_shaper.is_shaping_available():
+        size = font_size
+        if max_width:
+            _, size = fit_font(text, max_width, font_size)
+        pil_img = Image.fromarray(img)
+        if bengali_shaper.draw_shaped_text(pil_img, text, pos, BENGALI_FONT_PATH, size,
+                                           fill_color=fill_color, anchor=anchor, with_shadow=with_shadow):
+            img[:] = np.array(pil_img)
+            return img
+
     pil_img = Image.fromarray(img)
     draw = ImageDraw.Draw(pil_img)
 
@@ -194,26 +206,38 @@ def draw_broadcast_readability_card(frame: np.ndarray,
     # Dynamic positioning based on 1 vs 2 lines
     if len(lines) >= 2:
         target_size = int(h * 0.072)  # ~52px on 720p
-        f_main, _ = fit_font(lines[0], content_max_w, target_size, min_size=32)
+        f_main, size = fit_font(lines[0], content_max_w, target_size, min_size=32)
         y_l1 = by1 + int(bh * 0.28)
         y_l2 = by1 + int(bh * 0.54)
         y_sub = by1 + int(bh * 0.82)
 
-        # Drop shadow for line 1 and 2
-        for dx, dy in [(0, 2), (1, 1), (-1, 1), (0, -1)]:
-            draw.text((w // 2 + dx, y_l1 + dy), lines[0], font=f_main, fill=(4, 4, 6), anchor="mm")
-            draw.text((w // 2 + dx, y_l2 + dy), lines[1], font=f_main, fill=(4, 4, 6), anchor="mm")
-        draw.text((w // 2, y_l1), lines[0], font=f_main, fill=(255, 255, 255), anchor="mm")
-        draw.text((w // 2, y_l2), lines[1], font=f_main, fill=(255, 255, 255), anchor="mm")
+        shaped_1 = False
+        shaped_2 = False
+        if bengali_shaper.is_shaping_available() and has_bengali(lines[0]):
+            shaped_1 = bengali_shaper.draw_shaped_text(pil_img, lines[0], (w // 2, y_l1), BENGALI_FONT_PATH, size, fill_color=(255, 255, 255), anchor="mm")
+            shaped_2 = bengali_shaper.draw_shaped_text(pil_img, lines[1], (w // 2, y_l2), BENGALI_FONT_PATH, size, fill_color=(255, 255, 255), anchor="mm")
+
+        if not (shaped_1 and shaped_2):
+            # Drop shadow for line 1 and 2
+            for dx, dy in [(0, 2), (1, 1), (-1, 1), (0, -1)]:
+                draw.text((w // 2 + dx, y_l1 + dy), lines[0], font=f_main, fill=(4, 4, 6), anchor="mm")
+                draw.text((w // 2 + dx, y_l2 + dy), lines[1], font=f_main, fill=(4, 4, 6), anchor="mm")
+            draw.text((w // 2, y_l1), lines[0], font=f_main, fill=(255, 255, 255), anchor="mm")
+            draw.text((w // 2, y_l2), lines[1], font=f_main, fill=(255, 255, 255), anchor="mm")
     else:
         target_size = int(h * 0.078)  # ~56px on 720p
-        f_main, _ = fit_font(lines[0], content_max_w, target_size, min_size=34)
+        f_main, size = fit_font(lines[0], content_max_w, target_size, min_size=34)
         y_main = by1 + int(bh * 0.42) if sub_text else (by1 + bh // 2)
         y_sub = by1 + int(bh * 0.78)
 
-        for dx, dy in [(0, 2), (1, 1), (-1, 1), (0, -1)]:
-            draw.text((w // 2 + dx, y_main + dy), lines[0], font=f_main, fill=(4, 4, 6), anchor="mm")
-        draw.text((w // 2, y_main), lines[0], font=f_main, fill=(255, 255, 255), anchor="mm")
+        shaped = False
+        if bengali_shaper.is_shaping_available() and has_bengali(lines[0]):
+            shaped = bengali_shaper.draw_shaped_text(pil_img, lines[0], (w // 2, y_main), BENGALI_FONT_PATH, size, fill_color=(255, 255, 255), anchor="mm")
+
+        if not shaped:
+            for dx, dy in [(0, 2), (1, 1), (-1, 1), (0, -1)]:
+                draw.text((w // 2 + dx, y_main + dy), lines[0], font=f_main, fill=(4, 4, 6), anchor="mm")
+            draw.text((w // 2, y_main), lines[0], font=f_main, fill=(255, 255, 255), anchor="mm")
 
     # Monospaced English Subtitle in brackets
     if sub_text:
@@ -262,13 +286,18 @@ def draw_rule_card(frame: np.ndarray,
 
     content_max_w = safe_w - int(w * 0.04)
     f_id, _ = fit_font(rule_id, content_max_w, int(h * 0.034), min_size=18)
-    f_bn, _ = fit_font(text_bengali, content_max_w, int(h * 0.040), min_size=20)
+    f_bn, bn_size = fit_font(text_bengali, content_max_w, int(h * 0.040), min_size=20)
 
     # Draw Rule ID
     draw.text((x1 + 20, y_start + 6), rule_id, font=f_id, fill=(90, 235, 120))
     # Draw Bengali Rule Text in bold white with drop shadow
-    draw.text((x1 + 21, y_start + int(h * 0.050) + 1), text_bengali, font=f_bn, fill=(4, 4, 6))
-    draw.text((x1 + 20, y_start + int(h * 0.050)), text_bengali, font=f_bn, fill=(255, 255, 255))
+    shaped_rule = False
+    if bengali_shaper.is_shaping_available() and has_bengali(text_bengali):
+        shaped_rule = bengali_shaper.draw_shaped_text(pil_img, text_bengali, (x1 + 20, y_start + int(h * 0.050)), BENGALI_FONT_PATH, bn_size, fill_color=(255, 255, 255), anchor="la", with_shadow=True)
+
+    if not shaped_rule:
+        draw.text((x1 + 21, y_start + int(h * 0.050) + 1), text_bengali, font=f_bn, fill=(4, 4, 6))
+        draw.text((x1 + 20, y_start + int(h * 0.050)), text_bengali, font=f_bn, fill=(255, 255, 255))
 
     if text_english:
         f_en, _ = fit_font(text_english, content_max_w, int(h * 0.026), min_size=14)
