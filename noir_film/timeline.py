@@ -2,23 +2,17 @@
 Master Timeline Compositor for Project NOIR / Nishidak.
 Coordinates the full 5-Minute (300 Seconds, 7,200 frames @ 24 fps) cinematic analog horror film.
 
-Calibrated to the Silent Reading Timing Table:
-- Quick dialogue / reaction: 3–4 sec
-- Normal dialogue card: 4–6 sec
-- Warning or instruction: 7–8 sec
-- Emergency broadcast: 8–9 sec
-- Corrupted / glitching text: 7–8 sec
-- Hidden message / lore: 8–9 sec
-- Final threat / reveal: 10 sec
-
-Narrative Structure across 7 Acts:
-- ACT I: The Signal Interrupt & Corrupted TV News (00:00 – 00:45)
-- ACT II: Rural Lockdown & The First Call (00:45 – 01:30)
-- ACT III: The Mosquito Net Metamorphosis (01:30 – 02:20)
-- ACT IV: The Uncanny Feline Transmission (02:20 – 03:05)
-- ACT V: After Midnight, Somewhere Else — Abyss Plunge (03:05 – 03:55)
-- ACT VI: Trinetra — Tantric Cosmic Dread & The Third Call (03:55 – 04:35)
-- ACT VII: Terminal Severance & Theatrical End Credits (04:35 – 05:00)
+Calibrated to the Silent Reading Timing Table & User Creative Direction:
+- Broadcast Readability Cards matching 'Improve Broadcast Readability.png' (large, bold, zero jitter/shimmer).
+- Automatic Open-Source AI Watermark Removal on all plates during load.
+- 1:07 Mark: Left-hand cast-iron tube-well dripping black fluid frame-by-frame + cloud time-lapse across the moon.
+- 1:49 Mark: Tightly enclosed, closed mosquito net (spooky sheer white fabric cage).
+- 2:02 Mark: Tiny crawling spider swells suddenly into a colossal GIANT spanning the size of the net at the emergency beep.
+- 2:05 Mark: "ত্রিনেত্র প্রস্ফুটিত হইতেছে..." transitions into a blank screen with huge font, followed by slow gradual development of the eye.
+- 2:20 - 2:40 Mark: The Black Cat replaced with the uncanny Shadowy Hyper-Object Figure.
+- 2:33 Mark: Full-screen modular Night Sky Cloud Time-Lapse.
+- 4:47 Mark: Minimalist Between the Notes End Credits.
+- Tuned noise/haze for grounded cinematic realism.
 """
 import os
 import math
@@ -41,8 +35,34 @@ from .actors import trinetra_eye
 from .actors import news_broadcast
 from .actors import sector_map
 from .actors import civil_danger
+from .actors import tubewell_scene
+from .actors import cloud_timelapse
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def scrub_ai_watermark(img: np.ndarray) -> np.ndarray:
+    """
+    Open-Source AI Watermark Scrubber:
+    Removes Gemini / Imagen / Flow corner watermarks without altering composition.
+    Applies Telea inpainting over the bottom-right corner watermark zone
+    plus a subtle safe margin crop to guarantee 100% watermark elimination.
+    """
+    if img is None:
+        return img
+    h, w = img.shape[:2]
+    mask = np.zeros((h, w), dtype=np.uint8)
+    cx_mark = w - int(w * 0.068)
+    cy_mark = h - int(h * 0.108)
+    cv2.circle(mask, (cx_mark, cy_mark), int(min(w, h) * 0.058), 255, -1)
+    cv2.circle(mask, (int(w * 0.068), cy_mark), int(min(w, h) * 0.040), 255, -1)
+
+    scrubbed = cv2.inpaint(img, mask, inpaintRadius=5, flags=cv2.INPAINT_TELEA)
+
+    crop_y = int(h * 0.015)
+    crop_x = int(w * 0.015)
+    cropped = scrubbed[crop_y:h - crop_y, crop_x:w - crop_x]
+    return cv2.resize(cropped, (w, h), interpolation=cv2.INTER_LANCZOS4)
 
 
 def zoom_pan(plate, local_t, duration, zoom_start=1.0, zoom_end=1.06, pan_x=0, pan_y=0):
@@ -54,6 +74,32 @@ def zoom_pan(plate, local_t, duration, zoom_start=1.0, zoom_end=1.06, pan_x=0, p
     cy = h * 0.5 + pan_y * progress
     M = cv2.getRotationMatrix2D((cx, cy), 0, zoom)
     return cv2.warpAffine(plate, M, (w, h), borderMode=cv2.BORDER_REFLECT)
+
+
+def draw_enclosed_mosquito_net(frame: np.ndarray, width: int, height: int, t: float):
+    """
+    Renders tightly enclosed sheer white cotton mosquito net (moshari):
+    Not an open triangle tent, but a vertical sheer fabric enclosure tightly tucked under the cot.
+    """
+    overlay = frame.copy()
+    # Vertical sheer curtains hanging straight down from frame ties
+    for x in range(int(width * 0.12), int(width * 0.88), 18):
+        sway = math.sin(t * 1.2 + x * 0.05) * 2.0
+        cv2.line(overlay, (int(x + sway), int(height * 0.15)),
+                 (int(x + sway), int(height * 0.85)), (225, 230, 235), 14, cv2.LINE_AA)
+
+    # Top binding horizontal seam
+    cv2.line(overlay, (int(width * 0.10), int(height * 0.15)),
+             (int(width * 0.90), int(height * 0.15)), (240, 240, 245), 4, cv2.LINE_AA)
+    # Bottom hem tucked under mattress
+    cv2.line(overlay, (int(width * 0.10), int(height * 0.85)),
+             (int(width * 0.90), int(height * 0.85)), (180, 185, 190), 3, cv2.LINE_AA)
+
+    # 4 corner tie-cords reaching into dark ceiling
+    cv2.line(overlay, (int(width * 0.12), int(height * 0.15)), (int(width * 0.02), 0), (200, 200, 210), 2, cv2.LINE_AA)
+    cv2.line(overlay, (int(width * 0.88), int(height * 0.15)), (int(width * 0.98), 0), (200, 200, 210), 2, cv2.LINE_AA)
+
+    cv2.addWeighted(overlay, 0.45, frame, 0.55, 0, frame)
 
 
 class NoirTimeline:
@@ -104,18 +150,13 @@ class NoirTimeline:
             if os.path.exists(path):
                 img = cv2.imread(path)
                 if img is not None:
-                    self.plates[key] = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                    # Apply automated Open-Source AI Watermark Removal
+                    clean_img = scrub_ai_watermark(img)
+                    self.plates[key] = cv2.cvtColor(clean_img, cv2.COLOR_BGR2RGB)
                 else:
                     self.plates[key] = create_placeholder_plate(1280, 720, label=key)
             else:
                 self.plates[key] = create_placeholder_plate(1280, 720, label=key)
-
-        # End credits billboard poster
-        end_cred_path = os.path.join(posters_dir, "poster_var5_abyss_end_credits.png")
-        if os.path.exists(end_cred_path):
-            img = cv2.imread(end_cred_path)
-            if img is not None:
-                self.plates["end_credits_billboard"] = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
     def get_plate(self, name: str, w: int, h: int) -> np.ndarray:
         raw = self.plates.get(name)
@@ -137,12 +178,12 @@ class NoirTimeline:
         # ACT I: THE EMERGENCY BROADCAST INTERRUPTION & ALERT (00:00 – 00:45)
         # =========================================================================
         if t < 6.0:
-            # Shot 1: Bharat Darpan station ID & spinning mandala logo (6.0s - Emergency Broadcast)
+            # Shot 1: Bharat Darpan station ID (6.0s - Emergency Broadcast)
             doordarshan_alert.draw_bharat_darpan_logo(frame, width // 2, int(height * 0.35), radius=int(height * 0.12), t=t)
             text_overlay.draw_text(frame, "ভারত দর্পণ কেন্দ্র কলকাতা", (width // 2, int(height * 0.62)),
-                                   font_size=int(height * 0.038), fill_color=(245, 205, 55), anchor="mm")
+                                   font_size=int(height * 0.040), fill_color=(245, 205, 55), anchor="mm")
             text_overlay.draw_text(frame, "সত্যম শিবম সুন্দরম • মধ্যরাত্রিকালীন বিশেষ অধিবেশন", (width // 2, int(height * 0.70)),
-                                   font_size=int(height * 0.026), fill_color=(212, 175, 55), anchor="mm")
+                                   font_size=int(height * 0.028), fill_color=(212, 175, 55), anchor="mm")
 
         elif 6.0 <= t < 14.0:
             # Shot 2: Upgraded TV News Broadcast (Realistic) (8.0s - Emergency Broadcast)
@@ -166,8 +207,6 @@ class NoirTimeline:
             # Shot 3: Upgraded TV News Broadcast (Corrupted) (8.0s - Corrupted / Glitching Text)
             st = t - 14.0
             frame[:] = zoom_pan(self.get_plate("stormy_homestead", width, height), st, 8.0, 1.05, 1.10)
-            if math.sin(t * 35.0) > 0.8:
-                frame = np.clip(frame.astype(np.float32) * 1.18, 0, 255).astype(np.uint8)
             sig_val = int(np.clip(98 - st * 10, 24, 98))
             frame = news_broadcast.draw_corrupted_news_overlay(
                 frame, t=t,
@@ -192,16 +231,16 @@ class NoirTimeline:
             frame = civil_danger.draw_civil_danger_screen(frame, t=t, sub_bass=sub_bass)
 
         elif 37.0 <= t < 41.0:
-            # Shot 6: Silent Film Intertitle 1 (4.0s - Quick Dialogue / Reaction)
+            # Shot 6: High-Readability Broadcast Card 1 (4.0s - Quick Dialogue / Reaction)
             st = t - 37.0
-            text_overlay.draw_silent_film_intertitle(
+            text_overlay.draw_broadcast_readability_card(
                 frame, "“কে?... কপাটে কে আঘাত করিতেছে?”", "[ Who is knocking at the door? ]", t=st
             )
 
         elif 41.0 <= t < 45.0:
-            # Shot 7: Silent Film Intertitle 2 (4.0s - Normal Dialogue Card)
+            # Shot 7: High-Readability Broadcast Card 2 (4.0s - Normal Dialogue Card)
             st = t - 41.0
-            text_overlay.draw_silent_film_intertitle(
+            text_overlay.draw_broadcast_readability_card(
                 frame, "“কপাট খুলিবেন না। উহা আপনার মাতা নহে।”", "[ Do not open. That is not your mother. ]", t=st
             )
 
@@ -210,10 +249,10 @@ class NoirTimeline:
         # =========================================================================
         elif 45.0 <= t < 53.0:
             # Shot 8: Solitary Farmhouse in Moonlit Plain (8.0s - Atmospheric B-Roll)
+            # Tap on right side completely removed per user request
             st = t - 45.0
             frame[:] = zoom_pan(self.get_plate("homestead", width, height), st, 8.0, 1.0, 1.07)
             banana_trees.draw_banana_tree(frame, int(width * 0.90), height, t, scale=0.9, wind_strength=0.7)
-            banana_trees.draw_creaking_handpump(frame, int(width * 0.65), int(height * 0.82), t, scale=1.0)
 
         elif 53.0 <= t < 60.0:
             # Shot 9: Rule 1 Civil Defense Card (7.0s - Warning / Instruction)
@@ -224,26 +263,25 @@ class NoirTimeline:
                 frame, "[বিধি ১] (RULE 1)",
                 "রাত ১২টার পর কলাবাগান থেকে চেনা কণ্ঠে নিশিডাক শুনলে দরজা খুলবেন না।",
                 "DO NOT ANSWER FAMILIAR VOICES CALLING FROM THE BANANA GROVES.",
-                y_start=int(height * 0.74)
+                y_start=int(height * 0.70)
             )
 
         elif 60.0 <= t < 67.0:
-            # Shot 10: Macro B-Roll — Rusted Tube-well Handpump dripping viscous water (7.0s - Macro B-Roll)
+            # Shot 10: 1:07 MARK — Left-Hand Cast-Iron Tube-Well with Dripping Black Fluid & Cloud Time-Lapse
             st = t - 60.0
-            frame[:] = zoom_pan(self.get_plate("rusted_handpump", width, height), st, 7.0, 1.0, 1.06, pan_y=-10)
+            frame[:] = zoom_pan(self.get_plate("homestead", width, height), st, 7.0, 1.0, 1.05)
+            banana_trees.draw_banana_tree(frame, int(width * 0.88), height, t, scale=0.85, wind_strength=0.6)
+            tubewell_scene.draw_tubewell_scene_0107(frame, t, width, height)
 
         elif 67.0 <= t < 74.0:
             # Shot 11: Macro B-Roll — Weathered Teak Door & Rusted Latch (7.0s - Macro B-Roll)
             st = t - 67.0
             frame[:] = zoom_pan(self.get_plate("door_latch", width, height), st, 7.0, 1.0, 1.08)
-            jitter = int(math.sin(t * 32.0) * (3.0 if sub_bass > 0.2 else 1.0))
-            if jitter != 0:
-                frame[:] = np.roll(frame, jitter, axis=0)
 
         elif 74.0 <= t < 80.0:
-            # Shot 12: Dialogue Card 1 — The First Call (6.0s - Normal Dialogue Card)
+            # Shot 12: Broadcast Card 3 — The First Call (6.0s - Normal Dialogue Card)
             st = t - 74.0
-            text_overlay.draw_silent_film_intertitle(
+            text_overlay.draw_broadcast_readability_card(
                 frame, "প্রথম আহ্বান: “বিমল... ও বিমল... একবারটি বাহিরে আয়...”",
                 "[ The First Call: 'Bimal... O Bimal... come outside just once...' ]", t=st
             )
@@ -254,7 +292,7 @@ class NoirTimeline:
             frame[:] = zoom_pan(self.get_plate("newspaper_cutting", width, height), st, 6.0, 1.0, 1.07)
             text_overlay.draw_text(
                 frame, "সরকারি নথি ১৯৯৪: নিস্তব্ধপুর তদন্ত",
-                (width // 2, int(height * 0.12)), font_size=int(height * 0.030), fill_color=(240, 210, 60), anchor="mm"
+                (width // 2, int(height * 0.12)), font_size=int(height * 0.034), fill_color=(240, 210, 60), anchor="mm"
             )
 
         elif 86.0 <= t < 90.0:
@@ -263,7 +301,7 @@ class NoirTimeline:
             frame[:] = zoom_pan(self.get_plate("telephone", width, height), st, 4.0, 1.0, 1.06, pan_y=10)
             text_overlay.draw_text(
                 frame, "“সংযোগ বিচ্ছিন্ন। টেলিফোন ধরিবার কেহ নাই।”",
-                (width // 2, int(height * 0.86)), font_size=int(height * 0.030), fill_color=(230, 230, 230), anchor="mm"
+                (width // 2, int(height * 0.86)), font_size=int(height * 0.032), fill_color=(230, 230, 230), anchor="mm"
             )
 
         # =========================================================================
@@ -282,85 +320,106 @@ class NoirTimeline:
                 frame, "[বিধি ২] (RULE 2)",
                 "ঘরের মেঝেতে খোলস ও কীটপতঙ্গের পা গজাতে শুরু করলে শান্ত থাকুন।",
                 "IF CHITINOUS EXOSKELETON EMERGES: REMAIN FLAT UPON THE RED STONE.",
-                y_start=int(height * 0.74)
+                y_start=int(height * 0.70)
             )
 
         elif 104.0 <= t < 112.0:
-            # Shot 17: POV through Mosquito Net mesh watching the shadow entity (8.0s - Macro POV B-Roll)
+            # Shot 17: 1:49 MARK — TIGHTLY ENCLOSED MOSQUITO NET (Spooky sheer fabric cage)
             st = t - 104.0
-            frame[:] = zoom_pan(self.get_plate("net_pov", width, height), st, 8.0, 1.0, 1.07)
-            frame = distortion.apply_lens_breathing(frame, t, amplitude=0.03)
+            frame[:] = zoom_pan(self.get_plate("bedroom", width, height), st, 8.0, 1.0, 1.06)
+            draw_enclosed_mosquito_net(frame, width, height, t)
 
         elif 112.0 <= t < 117.0:
-            # Shot 18: Dialogue Card 2 — The Second Call (5.0s - Normal Dialogue Card)
+            # Shot 18: Broadcast Card 4 — The Second Call (5.0s - Normal Dialogue Card)
             st = t - 112.0
-            text_overlay.draw_silent_film_intertitle(
+            text_overlay.draw_broadcast_readability_card(
                 frame, "দ্বিতীয় আহ্বান: “দুয়ার খোল বাছা... মা আসিয়াছি... ভিজিয়া যাইতেছি রে...”",
                 "[ The Second Call: 'Open the door child... Mother has come home...' ]", t=st
             )
 
         elif 117.0 <= t < 125.0:
-            # Shot 19: Bimal Metamorphosis 1 — Chitin limb eruption on floor (8.0s - Psychological Actor B-Roll)
+            # Shot 19: 2:02 MARK — KAFKAESQUE SPIDER ERUPTION AT EMERGENCY BEEP SWELL
             st = t - 117.0
             frame[:] = self.get_plate("bedroom", width, height)
-            bimal_metamorphosis.draw_bimal_metamorphosis(
-                frame, t, int(width * 0.50), int(height * 0.70), progress=min(0.7, st / 8.0)
+            draw_enclosed_mosquito_net(frame, width, height, t)
+
+            if t < 122.0:
+                # Before 2:02: Remains VERY TINY, subtle arachnid crawling under the cot
+                bimal_metamorphosis.draw_bimal_metamorphosis(
+                    frame, t, int(width * 0.48), int(height * 0.76), progress=0.35, scale=0.25
+                )
+            else:
+                # At 2:02 emergency beep swell: erupts into GIANT room-sized spider spanning the mosquito net!
+                swell = min(1.0, (t - 122.0) / 1.6)
+                giant_scale = 0.25 + 2.3 * (swell ** 1.5)  # Expands to 2.55x
+                bimal_metamorphosis.draw_bimal_metamorphosis(
+                    frame, t, int(width * 0.50), int(height * 0.62), progress=1.0,
+                    cataract_glow=1.0, jitter_hz=34.0, scale=giant_scale
+                )
+
+        elif 125.0 <= t < 129.0:
+            # Shot 20A: 2:05 MARK — "ত্রিনেত্র প্রস্ফুটিত হইতেছে..." HUGE TYPOGRAPHY ON BLANK SCREEN
+            st = t - 125.0
+            text_overlay.draw_broadcast_readability_card(
+                frame, "“ত্রিনেত্র প্রস্ফুটিত হইতেছে...”",
+                "[ The Third Eye is Blossoming... ]", t=st
             )
 
-        elif 125.0 <= t < 132.0:
-            # Shot 20: Bimal Metamorphosis 2 — 32 Hz segmentation & crimson cataract eyes (7.0s - Metamorphosis)
-            st = t - 125.0
-            frame[:] = self.get_plate("bedroom", width, height)
-            bimal_metamorphosis.draw_bimal_metamorphosis(
-                frame, t, int(width * 0.48), int(height * 0.72), progress=1.0, cataract_glow=1.0, jitter_hz=32.0
-            )
-            text_overlay.draw_text(
-                frame, "ত্রিনেত্র প্রস্ফুটিত হইতেছে...",
-                (width // 2, int(height * 0.18)), font_size=int(height * 0.034), fill_color=(245, 60, 60), anchor="mm"
-            )
+        elif 129.0 <= t < 132.0:
+            # Shot 20B: SLOW GRADUAL EMERGENCE OF THE MANDALA EYE DEVELOPING OUT OF DARKNESS
+            st = t - 129.0
+            frame[:, :] = [4, 4, 6]
+            eye_opacity = min(1.0, st / 2.8)
+            overlay = frame.copy()
+            trinetra_eye.draw_trinetra_eye(overlay, width // 2, height // 2, t, scale=0.95, dilation_extra=sub_bass)
+            cv2.addWeighted(overlay, eye_opacity, frame, 1.0 - eye_opacity, 0, frame)
 
         elif 132.0 <= t < 140.0:
-            # Shot 21: Corrupted Lore Card (8.0s - Corrupted / Glitching Text)
+            # Shot 21: High-Readability Card 5 — Chitin Measurement (8.0s)
             st = t - 132.0
-            text_overlay.draw_silent_film_intertitle(
-                frame, "“উহা আপনার মাতা নহে... উহা আপনার চর্মের মাপ লইতেছে...”",
+            text_overlay.draw_broadcast_readability_card(
+                frame, "“উহা আপনার মাতা নহে...\nউহা আপনার চর্মের মাপ লইতেছে...”",
                 "[ That is not your mother... It is taking the measurement of your skin... ]", t=st
             )
 
         # =========================================================================
-        # ACT IV: THE UNCANNY FELINE TRANSMISSION & CRACKING REALITY (02:20 – 03:05)
+        # ACT IV: THE UNCANNY SHADOWY HYPER-OBJECT TRANSMISSION (02:20 – 03:05)
         # =========================================================================
         elif 140.0 <= t < 147.0:
-            # Shot 22: Black Tomcat on Split-Bamboo Fence (7.0s - Atmospheric B-Roll)
+            # Shot 22: Shadowy Hyper-Object Figure perched on Split-Bamboo Fence (no cat)
             st = t - 140.0
-            frame[:] = self.get_plate("black_cat", width, height)
-            hulo_cat.draw_hulo_cat(frame, t, cx=int(width * 0.52), cy=int(height * 0.68), stretch_factor=0.0)
+            frame[:] = zoom_pan(self.get_plate("homestead", width, height), st, 7.0, 1.0, 1.04)
+            banana_trees.draw_banana_tree(frame, int(width * 0.88), height, t, scale=0.85)
+            hulo_cat.draw_shadowy_figure(frame, t, cx=int(width * 0.52), cy=int(height * 0.68), stretch_factor=0.0)
 
         elif 147.0 <= t < 154.0:
             # Shot 23: Rule 3 Civil Defense Card (7.0s - Warning / Instruction)
             st = t - 147.0
             frame[:] = self.get_plate("homestead", width, height)
-            hulo_cat.draw_hulo_cat(frame, t, cx=int(width * 0.52), cy=int(height * 0.68), stretch_factor=0.0)
+            banana_trees.draw_banana_tree(frame, int(width * 0.88), height, t, scale=0.85)
+            hulo_cat.draw_shadowy_figure(frame, t, cx=int(width * 0.52), cy=int(height * 0.68), stretch_factor=0.0)
             text_overlay.draw_rule_card(
                 frame, "[বিধি ৩] (RULE 3)",
-                "বাঁশের বেড়ায় বসা হুলো বেড়ালের চোখের দিকে তাকাবেন না।",
-                "DO NOT GAZE INTO THE EYES OF THE TOMCAT UPON THE BAMBOO RAIL.",
-                y_start=int(height * 0.74)
+                "বাঁশের বেড়ায় অবস্থানরত ছায়ামূর্তির চোখের দিকে তাকাবেন না।",
+                "DO NOT GAZE INTO THE EYES OF THE SHADOWY ENTITY UPON THE RAIL.",
+                y_start=int(height * 0.70)
             )
 
         elif 154.0 <= t < 162.0:
-            # Shot 24: The Tomcat Neck Stretching upward into the night sky (8.0s - Surreal B-Roll)
+            # Shot 24: 2:33 MARK — FULL-SCREEN NIGHT SKY CLOUD TIME-LAPSE & ELONGATING SHADOW COLUMN
             st = t - 154.0
-            frame[:] = self.get_plate("homestead", width, height)
+            # Continuous multi-layered volumetric cloud time-lapse across the moon
+            cloud_timelapse.render_cloud_timelapse_sky(frame, t, width, height, cloud_speed=50.0)
+            banana_trees.draw_banana_tree(frame, int(width * 0.90), height, t, scale=0.85, wind_strength=0.7)
             stretch = min(1.0, st / 7.0)
-            hulo_cat.draw_hulo_cat(frame, t, cx=int(width * 0.52), cy=int(height * 0.68), stretch_factor=stretch)
+            hulo_cat.draw_shadowy_figure(frame, t, cx=int(width * 0.52), cy=int(height * 0.68), stretch_factor=stretch)
 
         elif 162.0 <= t < 169.0:
-            # Shot 25: Corrupted Intertitle (7.0s - Corrupted / Glitching Text)
+            # Shot 25: Broadcast Card 6 — Shadowy Entity Intertitle (7.0s)
             st = t - 162.0
-            text_overlay.draw_silent_film_intertitle(
-                frame, "“বিড়ালটি ডাকিতেছে না... আকাশ বিড়ালটির কণ্ঠে আপনার নাম উচ্চারণ করিতেছে...”",
-                "[ The cat is not crying... The sky speaks your name through its jaws... ]", t=st
+            text_overlay.draw_broadcast_readability_card(
+                frame, "“ছায়ামূর্তিটি ডাকিতেছে না... আকাশ উহার কণ্ঠে আপনার নাম উচ্চারণ করিতেছে...”",
+                "[ The shadowy entity does not speak... The sky speaks your name through its void... ]", t=st
             )
 
         elif 169.0 <= t < 176.0:
@@ -369,7 +428,7 @@ class NoirTimeline:
             frame[:] = zoom_pan(self.get_plate("protective_occult_wall", width, height), st, 7.0, 1.0, 1.07)
             text_overlay.draw_text(
                 frame, "প্রতিরক্ষা রেখা ভঙ্গ হইয়াছে",
-                (width // 2, int(height * 0.88)), font_size=int(height * 0.030), fill_color=(235, 70, 70), anchor="mm"
+                (width // 2, int(height * 0.88)), font_size=int(height * 0.034), fill_color=(235, 70, 70), anchor="mm"
             )
 
         elif 176.0 <= t < 182.0:
@@ -380,7 +439,7 @@ class NoirTimeline:
         elif 182.0 <= t < 185.0:
             # Shot 28: Quick Dialogue Countdown (3.0s - Quick Dialogue / Reaction)
             st = t - 182.0
-            text_overlay.draw_silent_film_intertitle(
+            text_overlay.draw_broadcast_readability_card(
                 frame, "“তৃতীয় আহ্বান সমাসন্ন...”", "[ The Third Call is imminent... ]", t=st
             )
 
@@ -426,7 +485,6 @@ class NoirTimeline:
             st = t - 225.0
             frame[:] = zoom_pan(self.get_plate("scanline_dissolve", width, height), st, 10.0, 1.0, 1.10)
             frame = distortion.apply_gravity_warp(frame, t, intensity=0.35)
-            frame = noise.apply_static_snow(frame, amount=min(0.65, st / 10.0))
 
         # =========================================================================
         # ACT VI: TRINETRA — TANTRIC COSMIC DREAD & THE THIRD CALL (03:55 – 04:35)
@@ -435,38 +493,39 @@ class NoirTimeline:
             # Shot 34: Celestial Third Eye (ত্রিনেত্র) in Monsoon Clouds (9.0s - Cosmic B-Roll)
             st = t - 235.0
             frame[:] = self.get_plate("cosmic_eye", width, height)
-            trinetra_eye.draw_trinetra_eye(frame, width // 2, int(height * 0.44), t, scale=1.1, dilation_extra=sub_bass)
+            trinetra_eye.draw_trinetra_eye(frame, width // 2, int(height * 0.44), t, scale=1.1, dilation_extra=sub_bass, sinister_red=0.85)
             banana_trees.draw_banana_tree(frame, int(width * 0.08), height, t, scale=0.8, wind_strength=0.5)
             banana_trees.draw_banana_tree(frame, int(width * 0.92), height, t, scale=0.8, wind_strength=0.5)
 
         elif 244.0 <= t < 252.0:
-            # Shot 35: Rule 4 Final Prohibition Card (8.0s - Warning / Instruction)
+            # Shot 35: 4:11 MARK — SINISTER BLOOD-RED EYE LOOK & FINAL PROHIBITION (8.0s)
             st = t - 244.0
             frame[:] = self.get_plate("cosmic_eye", width, height)
+            trinetra_eye.draw_trinetra_eye(frame, width // 2, int(height * 0.44), t, scale=1.20, dilation_extra=sub_bass, sinister_red=1.0)
             text_overlay.draw_rule_card(
                 frame, "[চূড়ান্ত নিষেধ] (RULE 4)",
                 "আকাশের রক্তিম নয়নের দিকে তাকাবেন না। উহা আপনাকে বহু পূর্বেই প্রত্যক্ষ করিয়াছে।",
                 "DO NOT GAZE INTO THE CRIMSON EYE. IT HAS WITNESSED YOU LONG BEFORE TONIGHT.",
-                y_start=int(height * 0.74)
+                y_start=int(height * 0.70)
             )
 
         elif 252.0 <= t < 263.0:
-            # Shot 36: Extreme Macro Pupil Dilation swallowing the heavens (11.0s - Macro Eye Dilation)
+            # Shot 36: Extreme Macro Sinister Red Pupil Dilation swallowing the heavens (11.0s)
             st = t - 252.0
             frame[:] = self.get_plate("cosmic_eye", width, height)
             dilation = min(1.2, st / 8.0) + sub_bass * 0.5
-            trinetra_eye.draw_trinetra_eye(frame, width // 2, int(height * 0.44), t, scale=1.35, dilation_extra=dilation)
+            trinetra_eye.draw_trinetra_eye(frame, width // 2, int(height * 0.44), t, scale=1.35, dilation_extra=dilation, sinister_red=1.0)
 
         elif 263.0 <= t < 273.0:
             # Shot 37: Final Threat / Climax Reveal Card (10.0s - Final Threat / Reveal)
             st = t - 263.0
-            text_overlay.draw_silent_film_intertitle(
-                frame, "“তৃতীয় আহ্বান সম্পূর্ণ হইয়াছে। আপনি ইতোমধ্যে উত্তর দিয়াছেন।”",
-                "[ The Third Call is complete. You have already answered. ]", t=st
+            text_overlay.draw_broadcast_readability_card(
+                frame, "“তৃতীয় আহ্বান সম্পূর্ণ হইয়াছে।\nআপনি ইতোমধ্যে উত্তর দিয়াছেন।”",
+                "[ The Third Call has completed. You have already answered. ]", t=st
             )
 
         elif 273.0 <= t < 275.0:
-            # Shot 38: Violent Subliminal Flash Cadence (2.0s - Rapid Montage)
+            # Shot 38: Subliminal Flash Cadence (2.0s - Rapid Montage)
             st = t - 273.0
             phase = int(st * 6.0) % 4
             if phase == 0:
@@ -477,10 +536,9 @@ class NoirTimeline:
                 frame = sector_map.draw_sector_radar_map(frame, t=t, sub_bass=sub_bass)
             else:
                 frame[:] = self.get_plate("macro_pupil_tv_reflection", width, height)
-            frame = noise.apply_static_snow(frame, amount=0.55)
 
         # =========================================================================
-        # ACT VII: TERMINAL SEVERANCE & THEATRICAL END CREDITS (04:35 – 05:00)
+        # ACT VII: TERMINAL SEVERANCE & MINIMALIST END CREDITS (04:35 – 05:00)
         # =========================================================================
         elif 275.0 <= t < 282.0:
             # Shot 39: Empty Cot Aftermath (7.0s - Emergency Broadcast Decree)
@@ -488,7 +546,7 @@ class NoirTimeline:
             frame[:] = zoom_pan(self.get_plate("empty_cot", width, height), st, 7.0, 1.0, 1.05)
             text_overlay.draw_text(
                 frame, "দূরদর্শন সম্প্রচার অনির্দিষ্টকালের জন্য বন্ধ থাকিবে।",
-                (width // 2, int(height * 0.88)), font_size=int(height * 0.032), fill_color=(240, 240, 240), anchor="mm"
+                (width // 2, int(height * 0.88)), font_size=int(height * 0.034), fill_color=(240, 240, 240), anchor="mm"
             )
 
         elif 282.0 <= t < 284.5:
@@ -507,63 +565,59 @@ class NoirTimeline:
             cv2.circle(frame, (width // 2, height // 2), dot_r, (120, 240, 140), -1)
 
         else:
-            # Shot 42: Theatrical Billboard End Credits (13.0s - 04:47 to 05:00)
+            # Shot 42: PURE MINIMALIST THEATRICAL END CREDITS (13.0s - 04:47 to 05:00)
             st = t - 287.0
-            if "end_credits_billboard" in self.plates:
-                frame[:] = zoom_pan(self.get_plate("end_credits_billboard", width, height), st, 13.0, 1.0, 1.04)
-            else:
-                # Elegant typographic credits backup
-                frame[:, :] = [8, 8, 12]
-                text_overlay.draw_text(frame, "BETWEEN THE NOTES", (width // 2, int(height * 0.28)),
-                                       font_size=int(height * 0.045), fill_color=(235, 235, 235), anchor="mm")
-                text_overlay.draw_text(frame, "A BETWEEN THE NOTES ORIGINAL", (width // 2, int(height * 0.38)),
-                                       font_size=int(height * 0.028), fill_color=(200, 40, 40), anchor="mm")
-                text_overlay.draw_text(frame, "ORIGINAL SCORE & SOUND DESIGN BY ATANDRA", (width // 2, int(height * 0.52)),
-                                       font_size=int(height * 0.024), fill_color=(210, 210, 210), anchor="mm")
-                text_overlay.draw_text(frame, "ANALOG HORROR ENGINE BY SAYAN", (width // 2, int(height * 0.60)),
-                                       font_size=int(height * 0.024), fill_color=(210, 210, 210), anchor="mm")
-                text_overlay.draw_text(frame, "IN CASE OF NISHIDAK: DO NOT ANSWER", (width // 2, int(height * 0.74)),
-                                       font_size=int(height * 0.026), fill_color=(245, 60, 60), anchor="mm")
+            frame = text_overlay.draw_minimal_end_credits(frame, t=st)
 
         # =========================================================================
         # UNIFIED CRT & VHS POST-PROCESSING PIPELINE
         # =========================================================================
-        # Billboard credits get milder CRT distortion to keep poster credits perfectly readable
-        if t >= 287.0:
+        # Check if frame is a high-readability text card or credits
+        is_text_card = (
+            (37.0 <= t < 45.0) or
+            (74.0 <= t < 80.0) or
+            (112.0 <= t < 117.0) or
+            (125.0 <= t < 129.0) or
+            (132.0 <= t < 140.0) or
+            (162.0 <= t < 169.0) or
+            (182.0 <= t < 185.0) or
+            (263.0 <= t < 273.0) or
+            (t >= 287.0)
+        )
+
+        if is_text_card:
+            # Ultra-mild post-processing to guarantee 100% crispness, zero jitter, and readability
             frame = crt.apply_crt(
                 frame,
-                curvature=0.03,
-                scanline_strength=0.12,
-                vignette_strength=0.18,
-                chromatic_aberration_px=1.0,
-                head_switching_px=12,
-                sub_bass=sub_bass,
+                curvature=0.01,
+                scanline_strength=0.04,
+                vignette_strength=0.10,
+                chromatic_aberration_px=0.0,
+                head_switching_px=0,
+                sub_bass=0.0,
                 t=t
             )
-            frame = vhs.apply_vhs_tracking(
-                frame, t,
-                tear_strength=0.10,
-                tracking_prob=0.04,
-                sub_bass=sub_bass
-            )
         else:
+            # Grounded cinematic analog horror: subtle scanlines, no over-the-top haze
             crt_cfg = self.cfg.get("crt", {})
             vhs_cfg = self.cfg.get("vhs", {})
 
             frame = crt.apply_crt(
                 frame,
-                curvature=crt_cfg.get("barrel_distortion", 0.08),
-                scanline_strength=crt_cfg.get("scanline_strength", 0.22),
-                vignette_strength=crt_cfg.get("vignette_strength", 0.35),
-                chromatic_aberration_px=crt_cfg.get("chromatic_aberration_px", 2.0),
-                head_switching_px=crt_cfg.get("head_switching_band_px", 24),
+                curvature=crt_cfg.get("barrel_distortion", 0.05),
+                scanline_strength=0.14,  # Reduced from 0.22 for realism
+                vignette_strength=0.25,  # Reduced from 0.35
+                chromatic_aberration_px=1.2,  # Controlled chromatic split
+                head_switching_px=18,
                 sub_bass=sub_bass,
                 t=t
             )
+            # Tracking line glitching tied directly to audio sub-bass hits
+            tracking_prob = 0.12 if sub_bass > 0.3 else 0.03
             frame = vhs.apply_vhs_tracking(
                 frame, t,
-                tear_strength=vhs_cfg.get("horizontal_tear_strength", 0.25),
-                tracking_prob=vhs_cfg.get("tracking_error_probability", 0.08),
+                tear_strength=0.18,
+                tracking_prob=tracking_prob,
                 sub_bass=sub_bass
             )
 

@@ -248,11 +248,11 @@ def draw_corrupted_news_overlay(frame: np.ndarray,
     content_x2 = tx1
 
     cv2.rectangle(frame, (content_x1, lt_y_start), (content_x2, lt_y_start + main_h), (170, 16, 20), -1)
-    cv2.rectangle(frame, (content_x1, lt_y_start), (content_x2, lt_y_start + main_h), (220, 45, 50), 1)
+    cv2.rectangle(frame, (content_x1, lt_y_start), (content_x2, lt_y_start + main_h), (220, 45, 50), 2)
     text_overlay.draw_text(
         frame, headline,
         (content_x1 + int((content_x2 - content_x1) * 0.03), lt_y_start + main_h // 2),
-        font_size=int(main_h * 0.48),
+        font_size=int(main_h * 0.56),
         fill_color=(255, 255, 255),
         max_width=int((content_x2 - content_x1) * 0.94),
         anchor="lm"
@@ -264,8 +264,8 @@ def draw_corrupted_news_overlay(frame: np.ndarray,
     text_overlay.draw_text(
         frame, sub_headline,
         (content_x1 + int((content_x2 - content_x1) * 0.03), lt_y_start + main_h + sub_h // 2),
-        font_size=int(sub_h * 0.48),
-        fill_color=(235, 235, 235),
+        font_size=int(sub_h * 0.54),
+        fill_color=(240, 240, 240),
         max_width=int((content_x2 - content_x1) * 0.94),
         anchor="lm"
     )
