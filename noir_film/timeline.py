@@ -229,7 +229,7 @@ class NoirTimeline:
                 headline="গ্রামের জঙ্গল রহস্য, জেলায় ছড়াল আতঙ্ক",
                 sub_headline="বাঁশবনে অদ্ভুত শব্দ, এলাকায় চাঞ্চল্য",
                 ticker_text="বিটুইন দ্য নোটস বিশেষ সতর্কবার্তা  |  নিস্তব্ধপুরে সান্ধ্য আইন জারি  |  বাঁশবনে আলো জ্বালাবেন না  |  অচেনা কণ্ঠে সাড়া নিষেধ  |  Between the Notes এক্সক্লুসিভ লাইভ",
-                sector_code="রাত্রি ৩ | ০০০০ ৩",
+                sector_code="রাত ৩:১২ | ০০০৩",
                 clock_str="03:12 AM",
                 weather_str="24°C",
                 channel_name="Between the Notes",
@@ -248,7 +248,7 @@ class NoirTimeline:
                 headline="ওরা দরজার বাইরে দাঁড়িয়ে আছে",
                 sub_headline="নিশিডাক শুনলে ঘরের দরজা বন্ধ রাখুন, কোনো সাড়া দেবেন না",
                 ticker_text="জরুরি অবস্থা  |  সিগন্যাল ড্রপ  |  কোথাও যাবেন না  |  টিভির পর্দায় চোখ রাখবেন না  |  Between the Notes সতর্কতা জারি",
-                sector_code="রাত্রি ৩ | ০০০০ ৩",
+                sector_code="রাত ৩:১২ | ০০০৩",
                 clock_str="03:12 AM",
                 weather_str="24°C",
                 channel_name="Between the Notes",
@@ -598,7 +598,7 @@ class NoirTimeline:
             st = t - 275.0
             frame[:] = zoom_pan(self.get_plate("empty_cot", width, height), st, 7.0, 1.0, 1.05)
             text_overlay.draw_text(
-                frame, "টেলিভিশন সম্প্রচার অনির্দিষ্টকালের জন্য বন্ধ থাকবে।",
+                frame, "আপাতত টিভি সম্প্রচার অনির্দিষ্ট সময়ের জন্য বন্ধ থাকছে।",
                 (width // 2, int(height * 0.88)), font_size=int(height * 0.034), fill_color=(240, 240, 240), anchor="mm"
             )
 

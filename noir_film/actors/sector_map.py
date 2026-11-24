@@ -32,7 +32,7 @@ def draw_sector_radar_map(frame: np.ndarray, t: float, sub_bass: float = 0.1) ->
     )
     # Bengali sub-header
     text_overlay.draw_text(
-        frame, "জরুরি অধিক্ষেত্র মানচিত্র: পশ্চিমবঙ্গ সেক্টর",
+        frame, "জরুরি এলাকার ম্যাপ: পশ্চিমবঙ্গ সেক্টর",
         (int(w * 0.08), header_y + int(h * 0.05)),
         font_size=int(h * 0.030),
         fill_color=(235, 120, 120),

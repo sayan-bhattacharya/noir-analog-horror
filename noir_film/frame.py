@@ -243,7 +243,7 @@ def render_noir_frame(plates, t, width=1280, height=720, sub_bass=0.1):
     else:
         st = t - 77.5
         frame[:, :] = [12, 10, 16]
-        actors.draw_bengali_text(frame, "সম্প্রচার সমাপ্ত হইবে না", (width // 2, height // 2),
+        actors.draw_bengali_text(frame, "সম্প্রচার বন্ধ হবে না", (width // 2, height // 2),
                                  font_size=30, fill_color=(180, 50, 50), anchor="mm")
         fade = min(1.0, st / 8.0)
         frame = shaders.apply_white_noise(frame, amount=0.30 + 0.65 * fade)

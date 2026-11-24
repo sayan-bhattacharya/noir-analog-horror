@@ -126,7 +126,7 @@ def render_scene_01(frame: np.ndarray, t: float, params: dict) -> np.ndarray:
                            font_size=int(h * 0.036), fill_color=(245, 205, 55), anchor="mm")
 
     motto_y = hdr_y + int(h * 0.046)
-    text_overlay.draw_text(frame, "BETWEEN THE NOTES BROADCAST NETWORK • মধ্যরাত্রিকালীন বিশেষ অধিবেশন", (w // 2, motto_y),
+    text_overlay.draw_text(frame, "BETWEEN THE NOTES BROADCAST NETWORK • মাঝরাতের বিশেষ সম্প্রচার", (w // 2, motto_y),
                            font_size=int(h * 0.024), fill_color=(212, 175, 55), anchor="mm")
 
     # 2. Emergency Banner cuts across screen at t >= 5.0
@@ -149,7 +149,7 @@ def render_scene_01(frame: np.ndarray, t: float, params: dict) -> np.ndarray:
         sec_y2 = sec_y1 + int(h * 0.048)
         text_overlay.draw_text(
             frame,
-            "অধিক্ষেত্র: নিস্তব্ধপুর ও তৎসংলগ্ন জনহীন প্রান্তর",
+            "এলাকা: নিস্তব্ধপুর ও আশেপাশের ফাঁকা মাঠ",
             (safe_margin_x, sec_y1), font_size=int(h * 0.034), fill_color=(94, 220, 120),
             max_width=max_body_w
         )
