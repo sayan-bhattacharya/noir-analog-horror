@@ -37,8 +37,46 @@ from .actors import sector_map
 from .actors import civil_danger
 from .actors import tubewell_scene
 from .actors import cloud_timelapse
+from .actors import descent_fall
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def apply_shot_transition(frame: np.ndarray, t: float) -> np.ndarray:
+    """
+    Applies authentic analog CRT channel-flip static bursts on channel switches
+    and smooth phosphor fade-ins/outs on atmospheric scene transitions.
+    """
+    h, w = frame.shape[:2]
+
+    # Channel-flip cuts (Truman Show channel switching)
+    channel_cuts = [6.0, 22.0, 45.0, 90.0, 140.0, 185.0, 204.0, 218.0, 226.0, 235.0, 275.0]
+    for c_t in channel_cuts:
+        dt = abs(t - c_t)
+        if dt < 0.22:
+            # Brief CRT horizontal sync roll + static snow burst
+            strength = 1.0 - (dt / 0.22)
+            shift_y = int(math.sin(t * 95.0) * h * 0.06 * strength)
+            if shift_y != 0:
+                frame[:] = np.roll(frame, shift_y, axis=0)
+            rng = np.random.default_rng(int(t * 1000) % 10000)
+            snow = rng.integers(0, 255, (h, w, 3), dtype=np.uint8)
+            frame[:] = cv2.addWeighted(frame, 1.0 - 0.55 * strength, snow, 0.55 * strength, 0)
+            # Horizontal tracking tear bar
+            bar_y = int(((t * 7.0) % 1.0) * h)
+            cv2.rectangle(frame, (0, max(0, bar_y - 8)), (w, min(h, bar_y + 8)), (210, 215, 220), -1)
+            return frame
+
+    # Smooth phosphor dip-to-dark transitions for atmospheric B-roll cuts
+    soft_cuts = [53.0, 60.0, 67.0, 74.0, 80.0, 86.0, 104.0, 154.0, 169.0, 176.0, 193.0, 287.0]
+    for s_t in soft_cuts:
+        dt = abs(t - s_t)
+        if dt < 0.28:
+            fade = dt / 0.28
+            frame[:] = (frame.astype(np.float32) * (0.25 + 0.75 * fade)).astype(np.uint8)
+            return frame
+
+    return frame
 
 
 def scrub_ai_watermark(img: np.ndarray) -> np.ndarray:
@@ -245,16 +283,17 @@ class NoirTimeline:
         # ACT II: THE RURAL LOCKDOWN & THE FIRST CALL (00:45 - 01:30)
         # =========================================================================
         elif 45.0 <= t < 53.0:
-            # Shot 8: Solitary Farmhouse in Moonlit Plain (8.0s - Atmospheric B-Roll)
-            # Tap on right side completely removed per user request
+            # Shot 8: Solitary Farmhouse in Moonlit Plain (8.0s - Locked-off Sky Time-Lapse)
             st = t - 45.0
-            frame[:] = zoom_pan(self.get_plate("homestead", width, height), st, 8.0, 1.0, 1.07)
+            base_plate = self.get_plate("homestead", width, height)
+            frame[:] = cloud_timelapse.composite_sky_timelapse_on_plate(base_plate, t, sky_cutoff=0.44)
             banana_trees.draw_banana_tree(frame, int(width * 0.90), height, t, scale=0.9, wind_strength=0.7)
 
         elif 53.0 <= t < 60.0:
-            # Shot 9: Rule 1 Civil Defense Card (7.0s - Warning / Instruction)
+            # Shot 9: Rule 1 Civil Defense Card (7.0s - Locked-off Sky Time-Lapse + Rule 1)
             st = t - 53.0
-            frame[:] = self.get_plate("homestead", width, height)
+            base_plate = self.get_plate("homestead", width, height)
+            frame[:] = cloud_timelapse.composite_sky_timelapse_on_plate(base_plate, t, sky_cutoff=0.44)
             banana_trees.draw_banana_tree(frame, int(width * 0.88), height, t, scale=0.85)
             text_overlay.draw_rule_card(
                 frame, "[বিধি ১] (RULE 1)",
@@ -264,9 +303,10 @@ class NoirTimeline:
             )
 
         elif 60.0 <= t < 67.0:
-            # Shot 10: 1:07 MARK - Left-Hand Cast-Iron Tube-Well with Dripping Black Fluid & Cloud Time-Lapse
+            # Shot 10: 1:07 MARK - Left-Hand Cast-Iron Tube-Well with Dripping Black Fluid & Locked-off Sky Time-Lapse
             st = t - 60.0
-            frame[:] = zoom_pan(self.get_plate("homestead", width, height), st, 7.0, 1.0, 1.05)
+            base_plate = self.get_plate("homestead", width, height)
+            frame[:] = cloud_timelapse.composite_sky_timelapse_on_plate(base_plate, t, sky_cutoff=0.44)
             banana_trees.draw_banana_tree(frame, int(width * 0.88), height, t, scale=0.85, wind_strength=0.6)
             tubewell_scene.draw_tubewell_scene_0107(frame, t, width, height)
 
@@ -305,9 +345,11 @@ class NoirTimeline:
         # ACT III: THE MOSQUITO NET METAMORPHOSIS (01:30 - 02:20)
         # =========================================================================
         elif 90.0 <= t < 97.0:
-            # Shot 15: Interior Bedroom draped in sheer white Mosquito Net (7.0s - Atmospheric B-Roll)
+            # Shot 15: CH 07 // BEDROOM CAM - Awakening to Nishir Daak inside Mosquito Net (7.0s)
             st = t - 90.0
             frame[:] = zoom_pan(self.get_plate("bedroom", width, height), st, 7.0, 1.0, 1.06)
+            text_overlay.draw_text(frame, "CH 07 // BEDROOM CAM", (int(width * 0.04), int(height * 0.08)),
+                                   font_size=int(height * 0.024), fill_color=(245, 70, 70), anchor="lm")
 
         elif 97.0 <= t < 104.0:
             # Shot 16: Rule 2 Civil Defense Card (7.0s - Warning / Instruction)
@@ -380,19 +422,23 @@ class NoirTimeline:
             )
 
         # =========================================================================
-        # ACT IV: THE UNCANNY SHADOWY HYPER-OBJECT TRANSMISSION (02:20 - 03:05)
+        # ACT IV: HYPER-OBJECTS ON OTHER CHANNELS (02:20 - 03:05)
         # =========================================================================
         elif 140.0 <= t < 147.0:
-            # Shot 22: Shadowy Hyper-Object Figure perched on Split-Bamboo Fence (no cat)
+            # Shot 22: CH 03 // FIELD CAM - Hyper-Object Figure perched on Locked-off Fence + Sky Time-Lapse
             st = t - 140.0
-            frame[:] = zoom_pan(self.get_plate("homestead", width, height), st, 7.0, 1.0, 1.04)
+            base_plate = self.get_plate("homestead", width, height)
+            frame[:] = cloud_timelapse.composite_sky_timelapse_on_plate(base_plate, t, sky_cutoff=0.44)
             banana_trees.draw_banana_tree(frame, int(width * 0.88), height, t, scale=0.85)
             hulo_cat.draw_shadowy_figure(frame, t, cx=int(width * 0.52), cy=int(height * 0.68), stretch_factor=0.0)
+            text_overlay.draw_text(frame, "CH 03 // FIELD CAM", (int(w := width) * 0.04, int(height * 0.08)),
+                                   font_size=int(height * 0.024), fill_color=(90, 235, 120), anchor="lm")
 
         elif 147.0 <= t < 154.0:
-            # Shot 23: Rule 3 Civil Defense Card (7.0s - Warning / Instruction)
+            # Shot 23: Rule 3 Civil Defense Card (7.0s - Locked-off Sky Time-Lapse)
             st = t - 147.0
-            frame[:] = self.get_plate("homestead", width, height)
+            base_plate = self.get_plate("homestead", width, height)
+            frame[:] = cloud_timelapse.composite_sky_timelapse_on_plate(base_plate, t, sky_cutoff=0.44)
             banana_trees.draw_banana_tree(frame, int(width * 0.88), height, t, scale=0.85)
             hulo_cat.draw_shadowy_figure(frame, t, cx=int(width * 0.52), cy=int(height * 0.68), stretch_factor=0.0)
             text_overlay.draw_rule_card(
@@ -441,43 +487,57 @@ class NoirTimeline:
             )
 
         # =========================================================================
-        # ACT V: BETWEEN THE NOTES - THE ABYSS PLUNGE (03:05 - 03:55)
+        # ACT V: DESCENT... - THE BLACK GLUEY META-OBJECT & TRUMAN FALL (03:05 - 03:55)
         # =========================================================================
-        elif 185.0 <= t < 194.0:
-            # Shot 29: Between the Notes Interstitial Slate (9.0s - High Readability Broadcast Card)
+        elif 185.0 <= t < 193.0:
+            # Shot 29: DESCENT... Title Slate (8.0s - High Readability Broadcast Card)
             st = t - 185.0
             text_overlay.draw_broadcast_readability_card(
-                frame, "বিটুইন দ্য নোটস: অ্যানালগ হরর চলচ্চিত্র\nপর্ব শূন্য: মহাকর্ষের পতন",
-                "[ BETWEEN THE NOTES: AN ANALOG HORROR FILM / EPISODE ZERO: FALL OF GRAVITY ]", t=st
+                frame, "DESCENT...\nবিটুইন দ্য নোটস: মহাকর্ষের পতন",
+                "[ EPISODE ZERO: HE WOKE TO THE NISHIR DAAK AND STEPPED INTO THE HOLE ]", t=st
             )
 
-        elif 194.0 <= t < 205.0:
-            # Shot 30: Hypnotic Optical Spiral Abyss (11.0s - Abyss B-Roll)
-            st = t - 194.0
-            frame = cosmic.draw_after_midnight_abyss(frame, st, sub_bass=sub_bass)
+        elif 193.0 <= t < 204.0:
+            # Shot 30: The Black Gluey Meta-Object Hole opens beneath him (11.0s)
+            st = t - 193.0
+            base_plate = self.get_plate("homestead", width, height)
+            frame[:] = cloud_timelapse.composite_sky_timelapse_on_plate(base_plate, t, sky_cutoff=0.44)
+            hole_prog = min(1.0, st / 4.5)
+            frame = descent_fall.draw_gluey_meta_hole(frame, t, progress=hole_prog, sub_bass=sub_bass)
+            text_overlay.draw_text(frame, "CH 07 // COURTYARD ANOMALY", (int(width * 0.04), int(height * 0.08)),
+                                   font_size=int(height * 0.024), fill_color=(245, 70, 70), anchor="lm")
 
-        elif 205.0 <= t < 216.0:
-            # Shot 31: Tumbling Man Vertigo Plunge into Spiral Abyss (11.0s - Vertigo B-Roll)
-            st = t - 205.0
-            frame[:] = zoom_pan(self.get_plate("tumbling_man", width, height), st, 11.0, 1.0, 1.15)
-            frame = distortion.apply_lens_breathing(frame, t, amplitude=0.04)
+        elif 204.0 <= t < 218.0:
+            # Shot 31: CH 07 // DESCENT CAM - Endless Rotating Fall inside Black Gluey Void (14.0s)
+            st = t - 204.0
+            abyss_bg = self.get_plate("tumbling_man", width, height)
+            frame = descent_fall.draw_rotating_descent(frame, t, st, plate_bg=abyss_bg, sub_bass=sub_bass, show_hud=True)
+            frame = distortion.apply_lens_breathing(frame, t, amplitude=0.03)
 
-        elif 216.0 <= t < 225.0:
-            # Shot 32: Archival Decoupling Log (9.0s - Hidden Message / Lore)
-            st = t - 216.0
-            frame = cosmic.draw_after_midnight_abyss(frame, st + 10.0, sub_bass=sub_bass)
-            text_overlay.draw_text(frame, "সতর্কতা: মাধ্যাকর্ষণ আর কাজ করছে না।", (width // 2, int(height * 0.16)),
-                                   font_size=int(height * 0.036), fill_color=(245, 60, 60), anchor="mm")
-            text_overlay.draw_text(frame, "WARNING: GRAVITATIONAL VECTOR PERMANENTLY DECOUPLED.", (width // 2, int(height * 0.22)),
-                                   font_size=int(height * 0.022), fill_color=(220, 220, 220), anchor="mm")
-            text_overlay.draw_text(frame, "YOU ARE FALLING UPWARD INTO THE CARRIER WAVE.", (width // 2, int(height * 0.27)),
-                                   font_size=int(height * 0.020), fill_color=(180, 180, 180), anchor="mm")
+        elif 218.0 <= t < 226.0:
+            # Shot 32: Truman-Show Channel Cut (CH 03 Hyper-object Cat <-> CH 07 Rotating Fall) (8.0s)
+            st = t - 218.0
+            if int(st / 2.0) % 2 == 0:
+                # Cut to CH 03: Hyper-object Cat perched calmly while sky races
+                base_plate = self.get_plate("homestead", width, height)
+                frame[:] = cloud_timelapse.composite_sky_timelapse_on_plate(base_plate, t, sky_cutoff=0.44)
+                hulo_cat.draw_shadowy_figure(frame, t, cx=int(width * 0.52), cy=int(height * 0.68), stretch_factor=0.6)
+                text_overlay.draw_text(frame, "CH 03 // FIELD CAM (HYPER-OBJECT)", (int(width * 0.04), int(height * 0.08)),
+                                       font_size=int(height * 0.024), fill_color=(90, 235, 120), anchor="lm")
+            else:
+                # Cut back to CH 07: Bimal still rotating and falling endlessly
+                abyss_bg = self.get_plate("tumbling_man", width, height)
+                frame = descent_fall.draw_rotating_descent(frame, t, st + 14.0, plate_bg=abyss_bg, sub_bass=sub_bass, show_hud=True)
+                text_overlay.draw_text(frame, "সতর্কতা: মাধ্যাকর্ষণ আর কাজ করছে না।", (width // 2, int(height * 0.18)),
+                                       font_size=int(height * 0.032), fill_color=(245, 60, 60), anchor="mm")
 
-        elif 225.0 <= t < 235.0:
-            # Shot 33: Human Face Disintegrating into Scanlines & Phosphor (10.0s - Glitch Dissolve B-Roll)
-            st = t - 225.0
-            frame[:] = zoom_pan(self.get_plate("scanline_dissolve", width, height), st, 10.0, 1.0, 1.10)
+        elif 226.0 <= t < 235.0:
+            # Shot 33: Human Face & Signal Disintegrating into Scanlines while Falling (9.0s)
+            st = t - 226.0
+            frame[:] = zoom_pan(self.get_plate("scanline_dissolve", width, height), st, 9.0, 1.0, 1.10)
             frame = distortion.apply_gravity_warp(frame, t, intensity=0.35)
+            text_overlay.draw_text(frame, "CH 07 // SIGNAL DECOUPLED", (int(width * 0.04), int(height * 0.08)),
+                                   font_size=int(height * 0.024), fill_color=(245, 70, 70), anchor="lm")
 
         # =========================================================================
         # ACT VI: TRINETRA - TANTRIC COSMIC DREAD & THE THIRD CALL (03:55 - 04:35)
@@ -561,6 +621,9 @@ class NoirTimeline:
             # Shot 42: PURE MINIMALIST THEATRICAL END CREDITS (13.0s - 04:47 to 05:00)
             st = t - 287.0
             frame = text_overlay.draw_minimal_end_credits(frame, t=st)
+
+        # Apply analog CRT channel-switch bursts and soft phosphor transitions
+        frame = apply_shot_transition(frame, t)
 
         # =========================================================================
         # UNIFIED CRT & VHS POST-PROCESSING PIPELINE
