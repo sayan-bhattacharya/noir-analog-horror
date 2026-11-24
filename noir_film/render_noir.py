@@ -13,15 +13,11 @@ import numpy as np
 from .utils.config_loader import load_global_config, load_yaml
 from .utils.video_io import FFmpegVideoPipe, mux_audio
 from .timeline import NoirTimeline
-from .audio_map import AudioMapper
+from .audio_map import AudioMapper, find_default_audio_path
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUTPUT_DIR = os.path.join(ROOT, "output")
-AUDIO_FILE = os.path.join(ROOT, "audio", "Noir.wav")
-if not os.path.exists(AUDIO_FILE):
-    alt_audio = os.path.join(ROOT, "Noir.wav")
-    if os.path.exists(alt_audio):
-        AUDIO_FILE = alt_audio
+AUDIO_FILE = find_default_audio_path()
 
 
 def render(args):

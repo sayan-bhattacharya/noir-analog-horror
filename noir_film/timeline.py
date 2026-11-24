@@ -173,33 +173,35 @@ class NoirTimeline:
         # ACT I: THE EMERGENCY BROADCAST INTERRUPTION & ALERT (00:00 - 00:45)
         # =========================================================================
         if t < 6.0:
-            # Shot 1: Bharat Darpan station ID (6.0s - Emergency Broadcast)
-            doordarshan_alert.draw_bharat_darpan_logo(frame, width // 2, int(height * 0.35), radius=int(height * 0.12), t=t)
-            text_overlay.draw_text(frame, "ভারত দর্পণ কেন্দ্র কলকাতা", (width // 2, int(height * 0.62)),
+            # Shot 1: Between the Notes Station ID & Emergency Signal Override (6.0s - Emergency Broadcast)
+            doordarshan_alert.draw_between_the_notes_logo(frame, width // 2, int(height * 0.32), radius=int(height * 0.12), t=t)
+            text_overlay.draw_text(frame, "বিটুইন দ্য নোটস সম্প্রচার কেন্দ্র কলকাতা", (width // 2, int(height * 0.58)),
                                    font_size=int(height * 0.040), fill_color=(245, 205, 55), anchor="mm")
-            text_overlay.draw_text(frame, "সত্যম শিবম সুন্দরম • মধ্যরাত্রিকালীন বিশেষ অধিবেশন", (width // 2, int(height * 0.70)),
-                                   font_size=int(height * 0.028), fill_color=(212, 175, 55), anchor="mm")
+            text_overlay.draw_text(frame, "BETWEEN THE NOTES NETWORK • বিশেষ জরুরি অধিবেশন", (width // 2, int(height * 0.66)),
+                                   font_size=int(height * 0.026), fill_color=(212, 175, 55), anchor="mm")
+            text_overlay.draw_text(frame, "নিস্তব্ধপুর গ্রামীণ এলাকা থেকে সরাসরি সম্প্রচার", (width // 2, int(height * 0.73)),
+                                   font_size=int(height * 0.022), fill_color=(180, 215, 180), anchor="mm")
 
         elif 6.0 <= t < 14.0:
-            # Shot 2: Upgraded TV News Broadcast (Realistic) (8.0s - Emergency Broadcast)
+            # Shot 2: Upgraded Between the Notes TV News Broadcast (8.0s - Emergency Broadcast)
             st = t - 6.0
             frame[:] = zoom_pan(self.get_plate("stormy_homestead", width, height), st, 8.0, 1.0, 1.05)
             frame = news_broadcast.draw_corrupted_news_overlay(
                 frame, t=t,
                 headline="গ্রামের জঙ্গল রহস্য, জেলায় ছড়াল আতঙ্ক",
                 sub_headline="বাঁশবনে অদ্ভুত শব্দ, এলাকায় চাঞ্চল্য",
-                ticker_text="নিস্তব্ধপুরে সান্ধ্য আইন জারি  |  বাঁশবনে আলো জ্বালাবেন না  |  অচেনা কণ্ঠে সাড়া নিষেধ  |  পশ্চিমবঙ্গে সতর্কতা",
+                ticker_text="বিটুইন দ্য নোটস বিশেষ সতর্কবার্তা  |  নিস্তব্ধপুরে সান্ধ্য আইন জারি  |  বাঁশবনে আলো জ্বালাবেন না  |  অচেনা কণ্ঠে সাড়া নিষেধ  |  Between the Notes এক্সক্লুসিভ লাইভ",
                 sector_code="রাত্রি ৩ | ০০০০ ৩",
                 clock_str="03:12 AM",
                 weather_str="24°C",
-                channel_name="দর্পণ বাংলা",
+                channel_name="Between the Notes",
                 signal_integrity=98,
                 is_recorded=False,
                 globe_corrupted=False
             )
 
         elif 14.0 <= t < 22.0:
-            # Shot 3: Upgraded TV News Broadcast (Corrupted) (8.0s - Corrupted / Glitching Text)
+            # Shot 3: Upgraded Between the Notes TV News Broadcast (Corrupted) (8.0s - Corrupted / Glitching Text)
             st = t - 14.0
             frame[:] = zoom_pan(self.get_plate("stormy_homestead", width, height), st, 8.0, 1.05, 1.10)
             sig_val = int(np.clip(98 - st * 10, 24, 98))
@@ -207,11 +209,11 @@ class NoirTimeline:
                 frame, t=t,
                 headline="ওরা দরজার বাইরে দাঁড়িয়ে আছে",
                 sub_headline="নিশিডাক শুনলে ঘরের দরজা বন্ধ রাখুন, কোনো সাড়া দেবেন না",
-                ticker_text="জরুরি অবস্থা  |  সিগন্যাল ড্রপ  |  কোথাও যাবেন না  |  টিভির পর্দায় চোখ রাখবেন না  |  নিশিডাকের ডাকে সাড়া দেবেন না",
+                ticker_text="জরুরি অবস্থা  |  সিগন্যাল ড্রপ  |  কোথাও যাবেন না  |  টিভির পর্দায় চোখ রাখবেন না  |  Between the Notes সতর্কতা জারি",
                 sector_code="রাত্রি ৩ | ০০০০ ৩",
                 clock_str="03:12 AM",
                 weather_str="24°C",
-                channel_name="দর্পণ বাংলা",
+                channel_name="Between the Notes",
                 signal_integrity=sig_val,
                 is_recorded=(st >= 2.5),  # Flips to RECORDED
                 globe_corrupted=True      # Globe morphs into staring dilated pupil
