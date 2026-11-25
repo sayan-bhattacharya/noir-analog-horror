@@ -39,6 +39,7 @@ from .actors import tubewell_scene
 from .actors import cloud_timelapse
 from .actors import descent_fall
 from .actors import machinist_stickman
+from .actors import v2_director
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _VIDEO_CACHE = {}
@@ -263,12 +264,19 @@ class NoirTimeline:
                                    font_size=int(height * 0.026), fill_color=(212, 175, 55), anchor="mm")
             text_overlay.draw_text(frame, "নিস্তব্ধপুর গ্রামীণ এলাকা থেকে সরাসরি সম্প্রচার", (width // 2, int(height * 0.73)),
                                    font_size=int(height * 0.022), fill_color=(180, 215, 180), anchor="mm")
+            v2_director.draw_crimson_point(frame, t, cx=int(width * 0.94), cy=int(height * 0.075), radius=4)
 
         elif 6.0 <= t < 14.0:
-            # Shot 2: Upgraded Between the Notes TV News Broadcast (8.0s - Clean Looping Storm Footage)
+            # Shot 2: CH 03 Bengal Geography / BTN 24 News Broadcast (8.0s - Clean V2 Geography or Storm Loop)
             st = t - 6.0
+            geo_f = get_video_frame_at(os.path.join("assets", "v2_videos", "V2_01_bengal_geography.mp4"), st, width, height)
             storm_f = get_storm_frame_at(t, width, height)
-            frame[:] = storm_f if storm_f is not None else zoom_pan(self.get_plate("stormy_homestead", width, height), st, 8.0, 1.0, 1.05)
+            if geo_f is not None:
+                frame[:] = geo_f
+            elif storm_f is not None:
+                frame[:] = storm_f
+            else:
+                frame[:] = zoom_pan(self.get_plate("stormy_homestead", width, height), st, 8.0, 1.0, 1.05)
             frame = news_broadcast.draw_corrupted_news_overlay(
                 frame, t=t,
                 headline="গ্রামের জঙ্গল রহস্য, জেলায় ছড়াল আতঙ্ক",
@@ -282,6 +290,7 @@ class NoirTimeline:
                 is_recorded=False,
                 globe_corrupted=False
             )
+            v2_director.draw_crimson_point(frame, t, cx=int(width * 0.94), cy=int(height * 0.075), radius=4)
 
         elif 14.0 <= t < 22.0:
             # Shot 3: Upgraded Between the Notes TV News Broadcast (Corrupted Storm Loop)
@@ -304,12 +313,19 @@ class NoirTimeline:
             )
 
         elif 22.0 <= t < 29.0:
-            # Shot 4: Glowing Red CRT Vector Sector Radar Map (7.0s - Warning / Instruction)
-            frame = sector_map.draw_sector_radar_map(frame, t=t, sub_bass=sub_bass)
+            # Shot 4: V2 Vintage Cartographic Contradiction (22-25.5s) -> Glowing Red CRT Sector Radar Map (25.5-29s)
+            st = t - 22.0
+            if st < 3.5:
+                v2_director.draw_vintage_map_contradiction(frame, t, st, width, height)
+                v2_director.draw_channel_hud(frame, "CH 03 // CARTOGRAPHY", t, color=(235, 200, 90))
+            else:
+                frame = sector_map.draw_sector_radar_map(frame, t=t, sub_bass=sub_bass)
+                v2_director.draw_crimson_point(frame, t)
 
         elif 29.0 <= t < 37.0:
             # Shot 5: Saturated Blood-Red Civil Danger Screen (8.0s - Emergency Broadcast)
             frame = civil_danger.draw_civil_danger_screen(frame, t=t, sub_bass=sub_bass)
+            v2_director.draw_channel_hud(frame, "CH 09 // EMERGENCY INFO", t, color=(255, 195, 195))
 
         elif 37.0 <= t < 41.0:
             # Shot 6: High-Readability Broadcast Card 1 (4.0s - Quick Dialogue / Reaction)
@@ -329,12 +345,14 @@ class NoirTimeline:
         # ACT II: THE RURAL LOCKDOWN & THE FIRST CALL (00:45 - 01:30)
         # =========================================================================
         elif 45.0 <= t < 53.0:
-            # Shot 8: Solitary Farmhouse + Machinist Stick-Man Figure + Locked-off Sky Time-Lapse
+            # Shot 8: V2 Locked-Off Ordinary Black Cat on Bamboo Fence (Shadow Slowly Turns Head)
             st = t - 45.0
-            base_plate = self.get_plate("homestead", width, height)
-            frame[:] = cloud_timelapse.composite_sky_timelapse_on_plate(base_plate, t, sky_cutoff=0.44)
-            banana_trees.draw_banana_tree(frame, int(width * 0.90), height, t, scale=0.9, wind_strength=0.7)
-            machinist_stickman.draw_machinist_stickman(frame, int(width * 0.36 + st * 4), int(height * 0.72), t, scale=1.05, walk_phase=st * 2.0)
+            cat_f = get_video_frame_at(os.path.join("assets", "v2_videos", "V2_02_cat_shadow_turn.mp4"), st, width, height)
+            if cat_f is not None:
+                frame[:] = cat_f
+            else:
+                v2_director.draw_cat_shadow_turn_scene(frame, t, st, width, height)
+            v2_director.draw_channel_hud(frame, "CH 03 // FIELD CAM", t, color=(90, 235, 120), sub_label="NISTOBDHOPUR")
 
         elif 53.0 <= t < 60.0:
             # Shot 9: Rule 1 Civil Defense Card (7.0s - Locked-off Sky Time-Lapse + Rule 1)
@@ -358,8 +376,8 @@ class NoirTimeline:
                 drone_f = get_video_frame_at(os.path.join("assets", "flow_drone_courtyard.mp4"), st, width, height)
                 frame[:] = drone_f if drone_f is not None else zoom_pan(self.get_plate("aerial_crossroads", width, height), st, 3.5, 1.0, 1.12)
                 machinist_stickman.draw_machinist_stickman(frame, int(width * 0.32), int(height * 0.68), t, scale=0.85, walk_phase=st * 3.0, is_alert=True)
-                text_overlay.draw_text(frame, "CH 03 // DRONE CAM - COURTYARD", (int(width * 0.04), int(height * 0.08)),
-                                       font_size=int(height * 0.022), fill_color=(90, 235, 120), anchor="lm")
+                loc_str = "22.9868° N, 87.8550° E" if 1.2 <= st < 2.7 else "LOCATION: NISTOBDHOPUR"
+                v2_director.draw_channel_hud(frame, "CH 03 // FIELD CAM", t, color=(90, 235, 120), sub_label=loc_str)
             else:
                 # Angle 2: Google Flow Close-Up Facing Tube-Well Dripping Thick Black Oil
                 pump_f = get_video_frame_at(os.path.join("assets", "flow_closeup_tubewell.mp4"), st - 3.5, width, height)
@@ -368,8 +386,7 @@ class NoirTimeline:
                 else:
                     frame[:] = zoom_pan(self.get_plate("rusted_handpump", width, height), st - 3.5, 3.5, 1.0, 1.08)
                     tubewell_scene.draw_oil_drip_closeup(frame, t, width, height)
-                text_overlay.draw_text(frame, "CAM 02 // TUBE-WELL CLOSE-UP", (int(width * 0.04), int(height * 0.08)),
-                                       font_size=int(height * 0.022), fill_color=(245, 70, 70), anchor="lm")
+                v2_director.draw_channel_hud(frame, "CAM 02 // TUBE-WELL CLOSE-UP", t, color=(245, 70, 70))
 
         elif 67.0 <= t < 74.0:
             # Shot 11: Macro B-Roll - Weathered Teak Door & Rusted Latch (7.0s - Macro B-Roll)
@@ -527,9 +544,14 @@ class NoirTimeline:
             )
 
         elif 169.0 <= t < 176.0:
-            # Shot 26: Exterior Mud Wall with Protective Occult Yantra Diagrams (7.0s - Occult B-Roll)
+            # Shot 26: CH 11 Sahaj Path Linocut Yantra Fracturing + Protective Occult Wall (7.0s)
             st = t - 169.0
-            frame[:] = zoom_pan(self.get_plate("protective_occult_wall", width, height), st, 7.0, 1.0, 1.07)
+            if st < 3.5:
+                v2_director.draw_sahaj_path_yantra(frame, t, st, width, height, fractured=(st >= 1.5))
+                v2_director.draw_channel_hud(frame, "CH 11 // SAHAJ PATH", t, color=(235, 200, 90))
+            else:
+                frame[:] = zoom_pan(self.get_plate("protective_occult_wall", width, height), st - 3.5, 3.5, 1.0, 1.07)
+                v2_director.draw_crimson_point(frame, t)
             text_overlay.draw_text(
                 frame, "সুরক্ষা বলয় ভেঙে গেছে",
                 (width // 2, int(height * 0.88)), font_size=int(height * 0.034), fill_color=(235, 70, 70), anchor="mm"
@@ -642,25 +664,30 @@ class NoirTimeline:
                 )
 
         elif 280.0 <= t < 300.0:
-            # Shot 36 (04:40 - 05:00): Retrograde Amnesia -> Unlatching & Opening the Door (04:58 Surge)
+            # Shot 36 (04:40 - 05:00): Retrograde Amnesia -> CRT False Ending Collapse -> 04:58 Snap Open
             st = t - 280.0
             frame[:] = zoom_pan(self.get_plate("door_latch", width, height), st, 20.0, 1.0, 1.18)
-            if st >= 17.5:
-                # Bright cool-white Exit 8 light spilling through as the door swings open at 04:58
-                spill = min(1.0, (st - 17.5) / 2.5)
-                frame[:] = np.clip(frame.astype(np.float32) + spill * 185.0, 0, 255).astype(np.uint8)
+            v2_director.draw_crt_collapse_open(frame, t, st, width, height)
 
-        elif 300.0 <= t < 326.0:
-            # Shot 37 (05:00 - 05:26): Immediately Stepping Into Exit 8 Corridor
+        elif 300.0 <= t < 322.0:
+            # Shot 37 (05:00 - 05:22): Hard Cut to Sterile Exit 8 Corridor + EXIT 0 Signage
             st = t - 300.0
             exit8_f = get_video_frame_at(os.path.join("assets", "stage2_videos", "S2_02_exit8_matrix_corridor.mp4"), st, width, height)
             frame[:] = exit8_f if exit8_f is not None else self.get_plate("aerial_crossroads", width, height)
+            v2_director.draw_exit0_hud(frame, t, width, height, show_anomaly_card=False)
 
-        elif 326.0 <= t < 338.0:
-            # Shot 38 (05:26 - 05:38): Entering the Berlin Metro x The Matrix Subway Platform
-            st = t - 326.0
+        elif 322.0 <= t < 338.0:
+            # Shot 38 (05:22 - 05:38): Berlin Metro x Matrix Platform + Pale Businessman in Dark Suit
+            st = t - 322.0
+            biz_f = get_video_frame_at(os.path.join("assets", "v2_videos", "V2_03_berlin_businessman.mp4"), st, width, height)
             metro_f = get_video_frame_at(os.path.join("assets", "stage2_videos", "S2_01_berlin_matrix_subway.mp4"), st, width, height)
-            frame[:] = metro_f if metro_f is not None else self.get_plate("aerial_crossroads", width, height)
+            if st >= 8.0 and biz_f is not None:
+                frame[:] = biz_f
+            elif metro_f is not None:
+                frame[:] = metro_f
+            else:
+                frame[:] = self.get_plate("aerial_crossroads", width, height)
+            v2_director.draw_exit0_hud(frame, t, width, height, show_anomaly_card=False)
 
         elif 338.0 <= t < 352.0:
             # Shot 39 (05:38 - 05:52): 05:38 TRAIN HONK PEAK (0.821) -> The Haunted Train Arrives
@@ -673,12 +700,14 @@ class NoirTimeline:
                 frame[:] = train_f
             else:
                 frame[:] = self.get_plate("aerial_crossroads", width, height)
+            v2_director.draw_crimson_point(frame, t, cx=int(width * 0.94), cy=int(height * 0.075), radius=4)
 
         else:
-            # Shot 40 (05:52 - 06:00): Goofy Sci-Fi Creature Peeks Out from Subway Tunnel (Cliffhanger)
+            # Shot 40 (05:52 - 06:00): Goofy Sci-Fi Creature + First Anomaly Prompt
             st = t - 352.0
             creat_f = get_video_frame_at(os.path.join("assets", "stage2_videos", "S2_03_goofy_scifi_creature.mp4"), st, width, height)
             frame[:] = creat_f if creat_f is not None else self.get_plate("cosmic_eye", width, height)
+            v2_director.draw_exit0_hud(frame, t, width, height, show_anomaly_card=(st >= 4.0))
 
         # Apply siren/beep reactive visual pulses + analog CRT channel-switch bursts
         frame = apply_siren_beep_pulse(frame, t, audio_features)
@@ -702,7 +731,17 @@ class NoirTimeline:
             (182.0 <= t < 194.0)
         )
 
-        if is_text_card:
+        # Clean institutional / sterile V2 layers (zero forced VHS glitches or chromatic split)
+        is_clean_v2_layer = (
+            is_text_card or
+            (6.0 <= t < 14.0) or
+            (22.0 <= t < 25.5) or
+            (45.0 <= t < 53.0) or
+            (169.0 <= t < 172.5) or
+            (300.0 <= t < 338.0)
+        )
+
+        if is_clean_v2_layer:
             # Ultra-mild post-processing to guarantee 100% crispness, zero jitter, and readability
             frame = crt.apply_crt(
                 frame,
