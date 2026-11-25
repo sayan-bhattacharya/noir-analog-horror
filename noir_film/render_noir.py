@@ -14,6 +14,7 @@ from .utils.config_loader import load_global_config, load_yaml
 from .utils.video_io import FFmpegVideoPipe, mux_audio
 from .timeline import NoirTimeline
 from .audio_map import AudioMapper, find_default_audio_path
+from . import modular_cache
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUTPUT_DIR = os.path.join(ROOT, "output")
@@ -81,26 +82,34 @@ def render(args):
     timeline = NoirTimeline(global_cfg)
     audio_mapper = AudioMapper(AUDIO_FILE) if not args.no_audio else None
 
-    pipe = FFmpegVideoPipe(raw_output, width=width, height=height, fps=fps, crf=crf)
-
-    total_frames = int(duration * fps)
     start_wall = time.time()
+    use_modular = (not getattr(args, "no_cache", False)) and (args.scene is None) and (args.config is None)
+    if use_modular and end_t <= 360.0:
+        modular_cache.render_modular_master(
+            timeline=timeline, audio_mapper=audio_mapper,
+            start_t=start_t, end_t=end_t, raw_output=raw_output,
+            width=width, height=height, fps=fps, crf=crf, use_cache=True
+        )
+    else:
+        pipe = FFmpegVideoPipe(raw_output, width=width, height=height, fps=fps, crf=crf)
 
-    for f_idx in range(total_frames):
-        local_t = f_idx / fps
-        t = start_t + local_t
+        total_frames = int(duration * fps)
 
-        audio_features = audio_mapper.get_features_at(t) if audio_mapper else {"sub_bass": 0.1, "rms": 0.1}
-        frame = timeline.render_frame_at(t, width=width, height=height, audio_features=audio_features)
-        pipe.write_frame(frame)
+        for f_idx in range(total_frames):
+            local_t = f_idx / fps
+            t = start_t + local_t
 
-        if f_idx % (fps * 2) == 0 or f_idx == total_frames - 1:
-            elapsed = time.time() - start_wall
-            pct = (f_idx + 1) / total_frames * 100.0
-            fps_render = (f_idx + 1) / max(0.001, elapsed)
-            print(f"  Progress: {pct:5.1f}% | Frame: {f_idx+1:4d}/{total_frames} | Speed: {fps_render:4.1f} fps", flush=True)
+            audio_features = audio_mapper.get_features_at(t) if audio_mapper else {"sub_bass": 0.1, "rms": 0.1}
+            frame = timeline.render_frame_at(t, width=width, height=height, audio_features=audio_features)
+            pipe.write_frame(frame)
 
-    pipe.close()
+            if f_idx % (fps * 2) == 0 or f_idx == total_frames - 1:
+                elapsed = time.time() - start_wall
+                pct = (f_idx + 1) / total_frames * 100.0
+                fps_render = (f_idx + 1) / max(0.001, elapsed)
+                print(f"  Progress: {pct:5.1f}% | Frame: {f_idx+1:4d}/{total_frames} | Speed: {fps_render:4.1f} fps", flush=True)
+
+        pipe.close()
 
     # Audio Muxing
     if not args.no_audio and os.path.exists(AUDIO_FILE):
@@ -136,6 +145,7 @@ def main():
     parser.add_argument("--config", type=str, help="Render from custom scene yaml configuration")
     parser.add_argument("--duration", type=float, help="Custom duration in seconds")
     parser.add_argument("--no-audio", action="store_true", help="Render silent video without audio track")
+    parser.add_argument("--no-cache", action="store_true", help="Bypass modular shot cache and force full rebuild")
     parser.add_argument("--quality", choices=["draft", "preview", "final"], default="preview", help="Render encoding quality")
 
     args = parser.parse_args()

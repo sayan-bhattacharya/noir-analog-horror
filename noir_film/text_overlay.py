@@ -346,68 +346,83 @@ def draw_rule_card(frame: np.ndarray,
                    text_bengali: str,
                    text_english: str = "",
                    y_start: int = None) -> np.ndarray:
-    """Renders a high-contrast, large-typography emergency rule card at bottom with zero jitter."""
+    """
+    Renders a vintage 1994 Doordarshan / broadcast archival advisory rule card:
+    - Double-bevel archival brass/amber outer border + deep crimson top header bar
+    - Warm CRT ivory Bengali typography (auto-wrapped to 2 lines if long, hyper-visible)
+    - Vintage amber IBMPlexMono-Bold English subtitle
+    """
     h, w = frame.shape[:2]
     if y_start is None:
-        y_start = int(h * 0.70)
+        y_start = int(h * 0.61)
+    else:
+        y_start = min(y_start, int(h * 0.62))
 
-    safe_w = int(w * 0.88)
+    safe_w = int(w * 0.90)
     x1 = (w - safe_w) // 2
     x2 = (w + safe_w) // 2
     card_h = h - y_start - int(h * 0.03)
+    y2 = y_start + card_h
 
-    # Dark high-contrast background with deep red/amber border
+    # Solid 95% dark vintage slate backdrop for hyper-visibility
     overlay = frame.copy()
-    cv2.rectangle(overlay, (x1, y_start), (x2, y_start + card_h), (8, 10, 14), -1)
-    cv2.addWeighted(overlay, 0.90, frame, 0.10, 0, frame)
-    cv2.rectangle(frame, (x1, y_start), (x2, y_start + card_h), (185, 24, 24), 2)
-    cv2.rectangle(frame, (x1 + 3, y_start + 3), (x2 - 3, y_start + card_h - 3), (40, 40, 48), 1)
+    cv2.rectangle(overlay, (x1, y_start), (x2, y2), (10, 11, 14), -1)
+    cv2.addWeighted(overlay, 0.95, frame, 0.05, 0, frame)
 
-    pil_img = Image.fromarray(frame)
-    draw = ImageDraw.Draw(pil_img)
+    # Vintage crimson broadcast header strip inside card
+    hdr_h = int(h * 0.052)
+    cv2.rectangle(frame, (x1, y_start), (x2, y_start + hdr_h), (142, 22, 24), -1)
 
-    content_max_w = safe_w - int(w * 0.04)
-    id_size = int(h * 0.034)
-    f_bn, bn_size = fit_font(text_bengali, content_max_w, int(h * 0.040), min_size=20)
+    # Archival double-bevel brass/gold frame
+    cv2.rectangle(frame, (x1, y_start), (x2, y2), (212, 175, 72), 2)
+    cv2.rectangle(frame, (x1 + 4, y_start + 4), (x2 - 4, y2 - 4), (96, 82, 46), 1)
 
-    # Draw Rule ID: cleanly split Bengali and Latin parts so zero tofu boxes occur
-    if "(" in rule_id and ")" in rule_id and has_bengali(rule_id):
-        parts = rule_id.split("(")
-        bn_part = parts[0].strip()
-        en_part = "(" + parts[1].strip()
-        offset_x = 0
-        if bengali_shaper.is_shaping_available():
-            bengali_shaper.draw_shaped_text(pil_img, bn_part, (x1 + 20, y_start + 6), BENGALI_FONT_PATH, id_size, fill_color=(90, 235, 120), anchor="la", with_shadow=False)
-            _, pw, _ = bengali_shaper.render_shaped_patch(bn_part, BENGALI_FONT_PATH, id_size)
-            offset_x = pw + 12
-        else:
-            f_bn_id = get_bengali_font(id_size)
-            draw.text((x1 + 20, y_start + 6), bn_part, font=f_bn_id, fill=(90, 235, 120))
-            offset_x = int(draw.textlength(bn_part, font=f_bn_id)) + 12
+    # Header bar text: Rule ID on left, Vintage Advisory Tag on right
+    draw_text(
+        frame, rule_id, (x1 + 20, y_start + hdr_h // 2),
+        font_size=int(h * 0.028), fill_color=(255, 232, 145), anchor="lm", with_shadow=True
+    )
+    draw_text(
+        frame, "CIVIL DEFENSE ADVISORY // জরুরি নির্দেশিকা", (x2 - 20, y_start + hdr_h // 2),
+        font_size=int(h * 0.021), fill_color=(248, 242, 225), anchor="rm", with_shadow=True
+    )
 
-        f_en_id = get_english_font(id_size)
-        draw.text((x1 + 20 + offset_x, y_start + 6), en_part, font=f_en_id, fill=(90, 235, 120))
+    content_max_w = safe_w - 44
+    # Wrap long Bengali rule into 2 balanced lines if needed so font stays large & hyper-visible
+    bn_lines = [text_bengali]
+    if len(text_bengali) > 42 and " " in text_bengali:
+        words = text_bengali.split(" ")
+        mid = len(words) // 2
+        bn_lines = [" ".join(words[:mid]), " ".join(words[mid:])]
+
+    bn_y_top = y_start + hdr_h + int(card_h * 0.14)
+    if len(bn_lines) == 1:
+        draw_text(
+            frame, bn_lines[0], (w // 2, bn_y_top + int(h * 0.022)),
+            font_size=int(h * 0.044), fill_color=(252, 248, 234),
+            anchor="mm", max_width=content_max_w, with_shadow=True
+        )
+        en_y = y2 - int(card_h * 0.17)
     else:
-        if has_bengali(rule_id) and bengali_shaper.is_shaping_available():
-            bengali_shaper.draw_shaped_text(pil_img, rule_id, (x1 + 20, y_start + 6), BENGALI_FONT_PATH, id_size, fill_color=(90, 235, 120), anchor="la", with_shadow=False)
-        else:
-            f_id, _ = fit_font(rule_id, content_max_w, id_size, min_size=18)
-            draw.text((x1 + 20, y_start + 6), rule_id, font=f_id, fill=(90, 235, 120))
-    # Draw Bengali Rule Text in bold white with drop shadow
-    shaped_rule = False
-    if bengali_shaper.is_shaping_available() and has_bengali(text_bengali):
-        shaped_rule = bengali_shaper.draw_shaped_text(pil_img, text_bengali, (x1 + 20, y_start + int(h * 0.050)), BENGALI_FONT_PATH, bn_size, fill_color=(255, 255, 255), anchor="la", with_shadow=True)
-
-    if not shaped_rule:
-        draw.text((x1 + 21, y_start + int(h * 0.050) + 1), text_bengali, font=f_bn, fill=(4, 4, 6))
-        draw.text((x1 + 20, y_start + int(h * 0.050)), text_bengali, font=f_bn, fill=(255, 255, 255))
+        draw_text(
+            frame, bn_lines[0], (w // 2, bn_y_top + int(h * 0.010)),
+            font_size=int(h * 0.041), fill_color=(252, 248, 234),
+            anchor="mm", max_width=content_max_w, with_shadow=True
+        )
+        draw_text(
+            frame, bn_lines[1], (w // 2, bn_y_top + int(h * 0.062)),
+            font_size=int(h * 0.041), fill_color=(252, 248, 234),
+            anchor="mm", max_width=content_max_w, with_shadow=True
+        )
+        en_y = y2 - int(card_h * 0.12)
 
     if text_english:
-        f_en, _ = fit_font(text_english, content_max_w, int(h * 0.026), min_size=14)
-        draw.text((x1 + 21, y_start + int(h * 0.108) + 1), text_english, font=f_en, fill=(4, 4, 6))
-        draw.text((x1 + 20, y_start + int(h * 0.108)), text_english, font=f_en, fill=(215, 230, 215))
+        draw_text(
+            frame, text_english, (w // 2, en_y),
+            font_size=int(h * 0.024), fill_color=(242, 204, 96),
+            anchor="mm", max_width=content_max_w, with_shadow=True
+        )
 
-    frame[:] = np.array(pil_img)
     return frame
 
 

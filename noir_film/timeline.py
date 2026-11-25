@@ -255,11 +255,11 @@ class NoirTimeline:
         # =========================================================================
         # ACT I: THE EMERGENCY BROADCAST INTERRUPTION & ALERT (00:00 - 00:45)
         # =========================================================================
-        if t < 3.5:
-            # Shot 0: Opening Fictional & Statutory Disclaimer (Crystal-Clear Readable Font)
+        if t < 5.0:
+            # Shot 0: Opening Fictional & Statutory Disclaimer (5.0s generous reading time)
             v2_director.draw_opening_fictional_disclaimer(frame, width, height)
 
-        elif 3.5 <= t < 8.0:
+        elif 5.0 <= t < 9.0:
             # Shot 1: Between the Notes Station ID & Emergency Signal Override
             doordarshan_alert.draw_between_the_notes_logo(frame, width // 2, int(height * 0.32), radius=int(height * 0.12), t=t)
             text_overlay.draw_text(frame, "বিটুইন দ্য নোটস সম্প্রচার কেন্দ্র কলকাতা", (width // 2, int(height * 0.58)),
@@ -270,9 +270,9 @@ class NoirTimeline:
                                    font_size=int(height * 0.022), fill_color=(180, 215, 180), anchor="mm")
             v2_director.draw_crimson_point(frame, t, cx=int(width * 0.94), cy=int(height * 0.075), radius=4)
 
-        elif 8.0 <= t < 14.0:
-            # Shot 2: CH 03 Bengal Geography / BTN 24 News Broadcast (6.0s - Clean V2 Geography or Storm Loop)
-            st = t - 8.0
+        elif 9.0 <= t < 14.0:
+            # Shot 2: CH 03 Bengal Geography / BTN 24 News Broadcast (5.0s - Clean V2 Geography or Storm Loop)
+            st = t - 9.0
             geo_f = get_video_frame_at(os.path.join("assets", "v2_videos", "V2_01_bengal_geography.mp4"), st, width, height)
             storm_f = get_storm_frame_at(t, width, height)
             if geo_f is not None:
@@ -570,14 +570,14 @@ class NoirTimeline:
                 (width // 2, int(height * 0.88)), font_size=int(height * 0.034), fill_color=(235, 70, 70), anchor="mm"
             )
 
-        elif 176.0 <= t < 182.0:
-            # Shot 27: Aerial Crossroads at 3:00 AM with Swirling Fog (6.0s - Aerial B-Roll)
+        elif 176.0 <= t < 181.0:
+            # Shot 27: Aerial Crossroads at 3:00 AM with Swirling Fog (5.0s - Aerial B-Roll)
             st = t - 176.0
-            frame[:] = zoom_pan(self.get_plate("aerial_crossroads", width, height), st, 6.0, 1.0, 1.06)
+            frame[:] = zoom_pan(self.get_plate("aerial_crossroads", width, height), st, 5.0, 1.0, 1.06)
 
-        elif 182.0 <= t < 185.0:
-            # Shot 28: Quick Dialogue Countdown (3.0s - Quick Dialogue / Reaction)
-            st = t - 182.0
+        elif 181.0 <= t < 185.0:
+            # Shot 28: Quick Dialogue Countdown (4.0s generous reading time)
+            st = t - 181.0
             text_overlay.draw_broadcast_readability_card(
                 frame, "“শেষ ডাক আর কিছুক্ষণেই...”", "[ The Final Call is coming... ]", t=st
             )
@@ -691,11 +691,13 @@ class NoirTimeline:
                 cv2.rectangle(frame, (0, 0), (width, lid_h), (4, 4, 6), -1)
                 cv2.rectangle(frame, (0, height - lid_h), (width, height), (4, 4, 6), -1)
 
-            if st < 5.0:
+            if st < 7.0:
+                cv2.rectangle(frame, (int(width * 0.25), int(height * 0.81)), (int(width * 0.75), int(height * 0.91)), (8, 10, 12), -1)
+                cv2.rectangle(frame, (int(width * 0.25), int(height * 0.81)), (int(width * 0.75), int(height * 0.91)), (212, 175, 72), 1)
                 text_overlay.draw_text(
                     frame, "আমি... আমি কোথায়?...",
                     (width // 2, int(height * 0.86)),
-                    font_size=int(height * 0.034), fill_color=(235, 245, 235), anchor="mm"
+                    font_size=int(height * 0.036), fill_color=(250, 248, 236), anchor="mm"
                 )
 
         elif 280.0 <= t < 300.0:
@@ -761,7 +763,7 @@ class NoirTimeline:
         # =========================================================================
         # Check if frame is a high-readability text card, rule card, slate, or credits
         is_text_card = (
-            (t < 8.0) or
+            (t < 9.0) or
             (37.0 <= t < 45.0) or
             (53.0 <= t < 60.0) or
             (74.0 <= t < 80.0) or
@@ -771,13 +773,13 @@ class NoirTimeline:
             (132.0 <= t < 140.0) or
             (147.0 <= t < 154.0) or
             (162.0 <= t < 169.0) or
-            (182.0 <= t < 194.0)
+            (181.0 <= t < 194.0)
         )
 
         # Clean institutional / sterile V2 layers (zero forced VHS glitches or chromatic split)
         is_clean_v2_layer = (
             is_text_card or
-            (6.0 <= t < 14.0) or
+            (9.0 <= t < 14.0) or
             (22.0 <= t < 25.5) or
             (45.0 <= t < 53.0) or
             (169.0 <= t < 172.5) or
