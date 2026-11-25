@@ -77,20 +77,76 @@ def get_font_for_text(text: str, size: int):
     return get_english_font(size)
 
 
-def fit_font(text: str, max_width: int, initial_size: int, min_size: int = 12):
-    """Auto-scales font size down until text bounding box fits within max_width."""
-    size = initial_size
-    fnt = get_font_for_text(text, size)
+def _split_script_runs(text: str) -> list:
+    """
+    Splits mixed Bengali + Latin/ASCII text into contiguous (is_bengali, substring) runs
+    so Bengali runs use NotoSansBengali + HarfBuzz and Latin/symbol runs use IBMPlexMono,
+    eliminating all square 'tofu' boxes.
+    """
+    runs = []
+    current = []
+    curr_bn = None
+
+    for ch in text:
+        code = ord(ch)
+        is_bn_char = (0x0980 <= code <= 0x09FF)
+        if ch in " \t":
+            # Keep spaces attached to the active run
+            if curr_bn is None:
+                curr_bn = False
+            current.append(ch)
+            continue
+
+        # Punctuation like |, •, :, -, [, ], (, ), ., , work cleanly in Latin font;
+        # Bengali danda '।' (0x0964) / '॥' (0x0965) belong to Bengali font.
+        if code in (0x0964, 0x0965):
+            is_bn_char = True
+
+        if curr_bn is None:
+            curr_bn = is_bn_char
+            current.append(ch)
+        elif is_bn_char == curr_bn:
+            current.append(ch)
+        else:
+            runs.append((curr_bn, "".join(current)))
+            current = [ch]
+            curr_bn = is_bn_char
+
+    if current:
+        runs.append((bool(curr_bn), "".join(current)))
+    return runs
+
+
+def _measure_mixed_width(runs: list, size: int) -> int:
+    """Measures total pixel width of mixed-script runs."""
     tmp = Image.new("RGB", (1, 1))
     d = ImageDraw.Draw(tmp)
+    f_en = get_english_font(size)
+    f_bn = get_bengali_font(size)
+    total_w = 0
+    for is_bn, seg in runs:
+        if is_bn and bengali_shaper.is_shaping_available():
+            _, pw, _ = bengali_shaper.render_shaped_patch(seg, BENGALI_FONT_PATH, size)
+            total_w += pw
+        elif is_bn:
+            bbox = d.textbbox((0, 0), seg, font=f_bn)
+            total_w += (bbox[2] - bbox[0])
+        else:
+            bbox = d.textbbox((0, 0), seg, font=f_en)
+            total_w += (bbox[2] - bbox[0])
+    return total_w
+
+
+def fit_font(text: str, max_width: int, initial_size: int, min_size: int = 12):
+    """Auto-scales font size down until mixed-script text fits within max_width."""
+    size = initial_size
+    runs = _split_script_runs(text)
     while size > min_size:
-        bbox = d.textbbox((0, 0), text, font=fnt)
-        w = bbox[2] - bbox[0]
+        w = _measure_mixed_width(runs, size)
         if w <= max_width:
             break
         size -= 1
-        fnt = get_font_for_text(text, size)
-    return fnt, size
+    return get_font_for_text(text, size), size
 
 
 def draw_text(img: np.ndarray,
@@ -101,35 +157,61 @@ def draw_text(img: np.ndarray,
               anchor: str = None,
               max_width: int = None,
               with_shadow: bool = True) -> np.ndarray:
-    """Renders crisp text onto an OpenCV uint8 image via PIL with language detection and clean contrast."""
+    """Renders crisp mixed-script text onto an OpenCV uint8 image with zero tofu boxes."""
     if not text:
         return img
 
-    if has_bengali(text) and bengali_shaper.is_shaping_available():
-        size = font_size
-        if max_width:
-            _, size = fit_font(text, max_width, font_size)
-        pil_img = Image.fromarray(img)
-        if bengali_shaper.draw_shaped_text(pil_img, text, pos, BENGALI_FONT_PATH, size,
-                                           fill_color=fill_color, anchor=anchor, with_shadow=with_shadow):
-            img[:] = np.array(pil_img)
-            return img
-
-    pil_img = Image.fromarray(img)
-    draw = ImageDraw.Draw(pil_img)
-
+    size = font_size
     if max_width:
-        font, _ = fit_font(text, max_width, font_size)
+        _, size = fit_font(text, max_width, font_size)
+
+    runs = _split_script_runs(text)
+    pil_img = Image.fromarray(img)
+
+    # Pure single-script fast path
+    if len(runs) == 1:
+        is_bn, seg = runs[0]
+        if is_bn and bengali_shaper.is_shaping_available():
+            if bengali_shaper.draw_shaped_text(pil_img, seg, pos, BENGALI_FONT_PATH, size,
+                                               fill_color=fill_color, anchor=anchor, with_shadow=with_shadow):
+                img[:] = np.array(pil_img)
+                return img
+
+    # Mixed-script (or pure Latin) segmented rendering: zero tofu glyphs guaranteed
+    total_w = _measure_mixed_width(runs, size)
+    px, py = pos
+    anchor_str = anchor or "la"
+    h_align = anchor_str[0] if len(anchor_str) >= 1 else "l"
+    v_align = anchor_str[1] if len(anchor_str) >= 2 else "a"
+
+    if h_align == "m":
+        cur_x = int(px - total_w / 2.0)
+    elif h_align == "r":
+        cur_x = int(px - total_w)
     else:
-        font = get_font_for_text(text, font_size)
+        cur_x = int(px)
 
-    # Clean drop shadow for maximum separation
-    if with_shadow:
-        px, py = pos
-        for dx, dy in [(0, 1), (1, 1), (-1, 1)]:
-            draw.text((px + dx, py + dy), text, font=font, fill=(5, 5, 5), anchor=anchor)
+    draw = ImageDraw.Draw(pil_img)
+    f_en = get_english_font(size)
+    f_bn = get_bengali_font(size)
 
-    draw.text(pos, text, font=font, fill=fill_color, anchor=anchor)
+    for is_bn, seg in runs:
+        if not seg:
+            continue
+        if is_bn and bengali_shaper.is_shaping_available():
+            _, pw, _ = bengali_shaper.render_shaped_patch(seg, BENGALI_FONT_PATH, size)
+            bengali_shaper.draw_shaped_text(pil_img, seg, (cur_x, py), BENGALI_FONT_PATH, size,
+                                            fill_color=fill_color, anchor=f"l{v_align}", with_shadow=with_shadow)
+            cur_x += pw
+        else:
+            fnt = f_bn if is_bn else f_en
+            if with_shadow:
+                for dx, dy in [(0, 1), (1, 1), (-1, 1)]:
+                    draw.text((cur_x + dx, py + dy), seg, font=fnt, fill=(5, 5, 5), anchor=f"l{v_align}")
+            draw.text((cur_x, py), seg, font=fnt, fill=fill_color, anchor=f"l{v_align}")
+            bbox = draw.textbbox((0, 0), seg, font=fnt)
+            cur_x += max(int(draw.textlength(seg, font=fnt)), bbox[2] - bbox[0])
+
     img[:] = np.array(pil_img)
     return img
 

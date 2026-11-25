@@ -9,7 +9,7 @@ import cv2
 import numpy as np
 from .. import text_overlay
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 LOGO_PATH = os.path.join(ROOT, "assets", "logo-circle.png")
 _CACHED_LOGO = None
 
@@ -66,10 +66,13 @@ def draw_between_the_notes_logo(frame: np.ndarray,
             else:
                 frame[y1:y2, x1:x2] = resized
 
-            # Outer luminous phosphor ring
+            # Translucent multi-layer phosphor halo border (glassmorphic glow)
             ring_color = (240, 60, 45) if red_scanlines > 0.3 else (245, 205, 55)
-            cv2.circle(frame, (cx, cy), r + 2, ring_color, 2, cv2.LINE_AA)
-            cv2.circle(frame, (cx, cy), r + 5, (int(ring_color[0] * 0.4), int(ring_color[1] * 0.4), int(ring_color[2] * 0.4)), 1, cv2.LINE_AA)
+            halo_overlay = frame.copy()
+            cv2.circle(halo_overlay, (cx, cy), r + 3, ring_color, 3, cv2.LINE_AA)
+            cv2.circle(halo_overlay, (cx, cy), r + 8, ring_color, 2, cv2.LINE_AA)
+            cv2.circle(halo_overlay, (cx, cy), r + 15, ring_color, 1, cv2.LINE_AA)
+            cv2.addWeighted(halo_overlay, 0.35, frame, 0.65, 0, frame)
             return frame
 
     # Procedural Fallback Emblem if file not loaded

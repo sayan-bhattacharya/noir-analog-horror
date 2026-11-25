@@ -38,8 +38,55 @@ from .actors import civil_danger
 from .actors import tubewell_scene
 from .actors import cloud_timelapse
 from .actors import descent_fall
+from .actors import machinist_stickman
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_STORM_FRAMES = None
+
+
+def get_storm_frame_at(t: float, width: int, height: int) -> np.ndarray:
+    """Loads looping monsoon storm footage (assets/storm_loop.mp4) with zero baked-in text."""
+    global _STORM_FRAMES
+    if _STORM_FRAMES is None:
+        storm_path = os.path.join(ROOT, "assets", "storm_loop.mp4")
+        frames = []
+        if os.path.exists(storm_path):
+            cap = cv2.VideoCapture(storm_path)
+            while True:
+                ret, f = cap.read()
+                if not ret or f is None:
+                    break
+                frames.append(cv2.cvtColor(f, cv2.COLOR_BGR2RGB))
+            cap.release()
+        _STORM_FRAMES = frames
+
+    if _STORM_FRAMES:
+        idx = int(t * 24.0) % len(_STORM_FRAMES)
+        f = _STORM_FRAMES[idx]
+        if f.shape[1] != width or f.shape[0] != height:
+            return cv2.resize(f, (width, height), interpolation=cv2.INTER_AREA)
+        return f.copy()
+    return None
+
+
+def apply_siren_beep_pulse(frame: np.ndarray, t: float, audio_features: dict) -> np.ndarray:
+    """Visualizes audio siren/beep transients with subtle crimson strobe edges & alert tag."""
+    sub_bass = audio_features.get("sub_bass", 0.1)
+    transient = audio_features.get("transient", False)
+    if transient or sub_bass > 0.38:
+        h, w = frame.shape[:2]
+        intensity = min(1.0, (sub_bass - 0.30) * 1.8) if not transient else 0.75
+        border = max(3, int(8 * intensity))
+        cv2.rectangle(frame, (0, 0), (w - 1, h - 1), (220, 35, 40), border)
+        if 45.0 <= t < 93.0:
+            text_overlay.draw_text(
+                frame, "[ ! SIREN / BEEP ]",
+                (int(w * 0.96), int(h * 0.08)),
+                font_size=int(h * 0.022),
+                fill_color=(245, 75, 75),
+                anchor="rm"
+            )
+    return frame
 
 
 def apply_shot_transition(frame: np.ndarray, t: float) -> np.ndarray:
@@ -171,7 +218,7 @@ class NoirTimeline:
             "cathode_collapse": "scene-20.jpeg",
             "sector_map_plate": "scene-21.jpeg",
             "civil_danger_plate": "scene-22.jpeg",
-            "stormy_homestead": "scene-23.jpeg",
+            "stormy_homestead": "scene-05.jpeg",
             "newspaper_cutting": "scene-24.jpeg",
             "rusted_handpump": "scene-25.jpeg",
             "protective_occult_wall": "scene-26.jpeg",
@@ -221,9 +268,10 @@ class NoirTimeline:
                                    font_size=int(height * 0.022), fill_color=(180, 215, 180), anchor="mm")
 
         elif 6.0 <= t < 14.0:
-            # Shot 2: Upgraded Between the Notes TV News Broadcast (8.0s - Emergency Broadcast)
+            # Shot 2: Upgraded Between the Notes TV News Broadcast (8.0s - Clean Looping Storm Footage)
             st = t - 6.0
-            frame[:] = zoom_pan(self.get_plate("stormy_homestead", width, height), st, 8.0, 1.0, 1.05)
+            storm_f = get_storm_frame_at(t, width, height)
+            frame[:] = storm_f if storm_f is not None else zoom_pan(self.get_plate("stormy_homestead", width, height), st, 8.0, 1.0, 1.05)
             frame = news_broadcast.draw_corrupted_news_overlay(
                 frame, t=t,
                 headline="গ্রামের জঙ্গল রহস্য, জেলায় ছড়াল আতঙ্ক",
@@ -239,9 +287,10 @@ class NoirTimeline:
             )
 
         elif 14.0 <= t < 22.0:
-            # Shot 3: Upgraded Between the Notes TV News Broadcast (Corrupted) (8.0s - Corrupted / Glitching Text)
+            # Shot 3: Upgraded Between the Notes TV News Broadcast (Corrupted Storm Loop)
             st = t - 14.0
-            frame[:] = zoom_pan(self.get_plate("stormy_homestead", width, height), st, 8.0, 1.05, 1.10)
+            storm_f = get_storm_frame_at(t, width, height)
+            frame[:] = storm_f if storm_f is not None else zoom_pan(self.get_plate("stormy_homestead", width, height), st, 8.0, 1.05, 1.10)
             sig_val = int(np.clip(98 - st * 10, 24, 98))
             frame = news_broadcast.draw_corrupted_news_overlay(
                 frame, t=t,
@@ -283,11 +332,12 @@ class NoirTimeline:
         # ACT II: THE RURAL LOCKDOWN & THE FIRST CALL (00:45 - 01:30)
         # =========================================================================
         elif 45.0 <= t < 53.0:
-            # Shot 8: Solitary Farmhouse in Moonlit Plain (8.0s - Locked-off Sky Time-Lapse)
+            # Shot 8: Solitary Farmhouse + Machinist Stick-Man Figure + Locked-off Sky Time-Lapse
             st = t - 45.0
             base_plate = self.get_plate("homestead", width, height)
             frame[:] = cloud_timelapse.composite_sky_timelapse_on_plate(base_plate, t, sky_cutoff=0.44)
             banana_trees.draw_banana_tree(frame, int(width * 0.90), height, t, scale=0.9, wind_strength=0.7)
+            machinist_stickman.draw_machinist_stickman(frame, int(width * 0.36 + st * 4), int(height * 0.72), t, scale=1.05, walk_phase=st * 2.0)
 
         elif 53.0 <= t < 60.0:
             # Shot 9: Rule 1 Civil Defense Card (7.0s - Locked-off Sky Time-Lapse + Rule 1)
@@ -295,6 +345,7 @@ class NoirTimeline:
             base_plate = self.get_plate("homestead", width, height)
             frame[:] = cloud_timelapse.composite_sky_timelapse_on_plate(base_plate, t, sky_cutoff=0.44)
             banana_trees.draw_banana_tree(frame, int(width * 0.88), height, t, scale=0.85)
+            machinist_stickman.draw_machinist_stickman(frame, int(width * 0.38), int(height * 0.72), t, scale=1.05, is_alert=(sub_bass > 0.30))
             text_overlay.draw_rule_card(
                 frame, "[বিধি ১] (RULE 1)",
                 "রাত বারোটার পর কলাবাগান থেকে চেনা গলায় ডাকলেও দরজা খুলবেন না।",
@@ -303,12 +354,22 @@ class NoirTimeline:
             )
 
         elif 60.0 <= t < 67.0:
-            # Shot 10: 1:07 MARK - Left-Hand Cast-Iron Tube-Well with Dripping Black Fluid & Locked-off Sky Time-Lapse
+            # Shot 10: 1:00 - 1:07 MARK - Drone Aerial Angle + Close-up Cast-Iron Tube-Well Dripping Black Oil
             st = t - 60.0
-            base_plate = self.get_plate("homestead", width, height)
-            frame[:] = cloud_timelapse.composite_sky_timelapse_on_plate(base_plate, t, sky_cutoff=0.44)
-            banana_trees.draw_banana_tree(frame, int(width * 0.88), height, t, scale=0.85, wind_strength=0.6)
-            tubewell_scene.draw_tubewell_scene_0107(frame, t, width, height)
+            if st < 3.5:
+                # Angle 1: Eerie Drone Aerial Sweep over Courtyard & Tube-Well + Machinist Stick-Man
+                drone_plate = self.get_plate("aerial_crossroads", width, height)
+                frame[:] = zoom_pan(drone_plate, st, 3.5, 1.0, 1.12, pan_x=-18, pan_y=-10)
+                machinist_stickman.draw_machinist_stickman(frame, int(width * 0.32), int(height * 0.68), t, scale=0.85, walk_phase=st * 3.0, is_alert=True)
+                text_overlay.draw_text(frame, "CH 03 // DRONE CAM - COURTYARD", (int(width * 0.04), int(height * 0.08)),
+                                       font_size=int(height * 0.022), fill_color=(90, 235, 120), anchor="lm")
+            else:
+                # Angle 2: Close-Up Facing Tube-Well with Thick Black Oil Dripping
+                pump_plate = self.get_plate("rusted_handpump", width, height)
+                frame[:] = zoom_pan(pump_plate, st - 3.5, 3.5, 1.0, 1.08)
+                tubewell_scene.draw_oil_drip_closeup(frame, t, width, height)
+                text_overlay.draw_text(frame, "CAM 02 // TUBE-WELL CLOSE-UP", (int(width * 0.04), int(height * 0.08)),
+                                       font_size=int(height * 0.022), fill_color=(245, 70, 70), anchor="lm")
 
         elif 67.0 <= t < 74.0:
             # Shot 11: Macro B-Roll - Weathered Teak Door & Rusted Latch (7.0s - Macro B-Roll)
@@ -622,7 +683,8 @@ class NoirTimeline:
             st = t - 287.0
             frame = text_overlay.draw_minimal_end_credits(frame, t=st)
 
-        # Apply analog CRT channel-switch bursts and soft phosphor transitions
+        # Apply siren/beep reactive visual pulses + analog CRT channel-switch bursts
+        frame = apply_siren_beep_pulse(frame, t, audio_features)
         frame = apply_shot_transition(frame, t)
 
         # =========================================================================

@@ -8,7 +8,7 @@ import os
 import cv2
 import numpy as np
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 VIDEO_LOOP_PATH = os.path.join(ROOT, "assets", "cloud_timelapse_loop.mp4")
 
 _CACHED_FRAMES = None

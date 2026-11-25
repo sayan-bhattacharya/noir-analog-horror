@@ -19,7 +19,7 @@ import cv2
 import numpy as np
 from .. import text_overlay
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 LOGO_PATH = os.path.join(ROOT, "assets", "logo-circle.png")
 _CACHED_LOGO = None
 
@@ -232,7 +232,8 @@ def draw_corrupted_news_overlay(frame: np.ndarray,
         (lt_x1 + tag_w // 2, tag_y + tag_h // 2),
         font_size=int(tag_h * 0.48),
         fill_color=(18, 18, 24),
-        anchor="mm"
+        anchor="mm",
+        with_shadow=False
     )
 
     # 3B. Globe Icon Box
@@ -330,7 +331,8 @@ def draw_corrupted_news_overlay(frame: np.ndarray,
         font_size=int(ticker_h * 0.44),
         fill_color=(25, 25, 30),
         max_width=ticker_display_w,
-        anchor="lm"
+        anchor="lm",
+        with_shadow=False
     )
 
     return frame

@@ -233,3 +233,16 @@ def draw_tubewell_scene_0107(frame: np.ndarray, t: float, width: int = 1280, hei
     draw_dripping_fluid(frame, spout_x, spout_y, puddle_y, t, scale=scale)
 
     return frame
+
+
+def draw_oil_drip_closeup(frame: np.ndarray, t: float, width: int = 1280, height: int = 720) -> np.ndarray:
+    """
+    Close-up angle facing the rusted cast-iron tube-well spout:
+    renders thick, glossy viscous black oil forming, stretching, and dripping drop-by-drop.
+    """
+    spout_x = int(width * 0.48)
+    spout_y = int(height * 0.48)
+    puddle_y = int(height * 0.88)
+    scale = max(1.2, height / 720.0 * 1.9)
+    draw_dripping_fluid(frame, spout_x, spout_y, puddle_y, t, scale=scale)
+    return frame
