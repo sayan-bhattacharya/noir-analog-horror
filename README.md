@@ -8,7 +8,7 @@ NOIR is an analog-horror visual engine inspired by a corrupted 1994 Doordarshan 
 
 - **Colab notebook:** [`colab_noir_accelerator.ipynb`](colab_noir_accelerator.ipynb) renders the current 5:52 workprint at 1280?720, 24 fps. `RENDER_PREVIEW = True` selects a 640?360, 12 fps draft.
 - **Local Python CLI:** `config/global.yaml` currently sets a 360-second (6-minute) timeline at 1280?720, 24 fps. These profiles differ by eight seconds; check the timeline you intend to use before treating them as interchangeable.
-- **Soundtrack:** `Noir.wav`, stored with Git LFS. Do not substitute the unrelated podcast sample in `audio/`.
+- **Soundtrack:** `Noir.wav`, stored with Git LFS. Do not substitute the unrelated podcast sample archived outside this project under `podcast_media/`.
 
 ## Quick start
 

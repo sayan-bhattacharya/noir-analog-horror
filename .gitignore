@@ -15,6 +15,3 @@ noir_720p_story_preview.mp4
 *.partial.mp4
 *.tmp
 *.log
-
-# Non-NOIR podcast sample; the render requires the LFS-managed Noir.wav
-audio/BetweenTheNotes_Podcast_5min.wav
