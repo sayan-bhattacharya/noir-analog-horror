@@ -609,82 +609,66 @@ class NoirTimeline:
                                    font_size=int(height * 0.024), fill_color=(245, 70, 70), anchor="lm")
 
         # =========================================================================
-        # ACT VI: TRINETRA - TANTRIC COSMIC DREAD & THE THIRD CALL (03:55 - 04:35)
+        # ACT VI: 03:56 PIANO SHIFT — HALF-AWAKE POV INTO EXIT 8 & MATRIX SUBWAY (03:56 - 04:47)
         # =========================================================================
-        elif 235.0 <= t < 244.0:
-            # Shot 34: Celestial Third Eye (ত্রিনেত্র) in Monsoon Clouds (9.0s - Cosmic B-Roll)
+        elif 235.0 <= t < 258.0:
+            # Shot 34 (03:56 - 04:18): Piano starts; Half-Awake, Half-Asleep Blinking POV into Exit 8
             st = t - 235.0
-            frame[:] = self.get_plate("cosmic_eye", width, height)
-            trinetra_eye.draw_trinetra_eye(frame, width // 2, int(height * 0.44), t, scale=1.1, dilation_extra=sub_bass, sinister_red=0.85)
-            banana_trees.draw_banana_tree(frame, int(width * 0.08), height, t, scale=0.8, wind_strength=0.5)
-            banana_trees.draw_banana_tree(frame, int(width * 0.92), height, t, scale=0.8, wind_strength=0.5)
+            exit8_f = get_video_frame_at(os.path.join("assets", "stage2_videos", "S2_02_exit8_matrix_corridor.mp4"), st, width, height)
+            frame[:] = exit8_f if exit8_f is not None else self.get_plate("cosmic_eye", width, height)
 
-        elif 244.0 <= t < 252.0:
-            # Shot 35: 4:11 MARK - SINISTER BLOOD-RED EYE LOOK & FINAL PROHIBITION (8.0s)
-            st = t - 244.0
-            frame[:] = self.get_plate("cosmic_eye", width, height)
-            trinetra_eye.draw_trinetra_eye(frame, width // 2, int(height * 0.44), t, scale=1.20, dilation_extra=sub_bass, sinister_red=1.0)
-            text_overlay.draw_rule_card(
-                frame, "[চূড়ান্ত নিষেধ] (RULE 4)",
-                "আকাশের লাল চোখের দিকে তাকাবেন না। ও অনেক আগেই আপনাকে দেখে ফেলেছে।",
-                "DO NOT GAZE INTO THE RED EYE IN THE SKY. IT SAW YOU LONG AGO.",
-                y_start=int(height * 0.70)
-            )
+            # Dreamy half-awake soft-focus blur + heavy eyelid blink vignette
+            blur = cv2.GaussianBlur(frame, (15, 15), 0)
+            dream_mix = 0.35 + 0.25 * math.sin(st * 1.1)
+            frame[:] = cv2.addWeighted(frame, 1.0 - dream_mix, blur, dream_mix, 0)
 
-        elif 252.0 <= t < 263.0:
-            # Shot 36: Extreme Macro Sinister Red Pupil Dilation swallowing the heavens (11.0s)
-            st = t - 252.0
-            frame[:] = self.get_plate("cosmic_eye", width, height)
-            dilation = min(1.2, st / 8.0) + sub_bass * 0.5
-            trinetra_eye.draw_trinetra_eye(frame, width // 2, int(height * 0.44), t, scale=1.35, dilation_extra=dilation, sinister_red=1.0)
+            # Heavy eyelid blink closure (two slow groggy blinks at st ~ 2s and st ~ 11s)
+            blink = 0.0
+            for bt in (2.0, 11.5):
+                bd = abs(st - bt)
+                if bd < 0.7:
+                    blink = max(blink, 1.0 - bd / 0.7)
+            if blink > 0.05:
+                lid_h = int((height * 0.48) * blink)
+                cv2.rectangle(frame, (0, 0), (width, lid_h), (4, 4, 6), -1)
+                cv2.rectangle(frame, (0, height - lid_h), (width, height), (4, 4, 6), -1)
 
-        elif 263.0 <= t < 273.0:
-            # Shot 37: Final Threat / Climax Reveal Card (10.0s - Final Threat / Reveal)
-            st = t - 263.0
-            text_overlay.draw_broadcast_readability_card(
-                frame, "“তৃতীয় ডাক শেষ।\nআপনি আগেই উত্তর দিয়ে ফেলেছেন।”",
-                "[ The Third Call is complete. You have already answered. ]", t=st
-            )
+            if st < 4.5:
+                text_overlay.draw_text(
+                    frame, "০৩:৫৬ — পিয়ানোর সুরে চোখ খুলে গেল... এটা কোথায়?",
+                    (width // 2, int(height * 0.86)),
+                    font_size=int(height * 0.032), fill_color=(235, 245, 235), anchor="mm"
+                )
 
-        elif 273.0 <= t < 275.0:
-            # Shot 38: Subliminal Flash Cadence (2.0s - Rapid Montage)
-            st = t - 273.0
-            phase = int(st * 6.0) % 4
-            if phase == 0:
-                frame[:] = self.get_plate("door_latch", width, height)
-            elif phase == 1:
-                frame = civil_danger.draw_civil_danger_screen(frame, t=t, sub_bass=sub_bass)
-            elif phase == 2:
-                frame = sector_map.draw_sector_radar_map(frame, t=t, sub_bass=sub_bass)
-            else:
-                frame[:] = self.get_plate("macro_pupil_tv_reflection", width, height)
-
-        # =========================================================================
-        # ACT VII: TERMINAL SEVERANCE & MINIMALIST END CREDITS (04:35 - 05:00)
-        # =========================================================================
-        elif 275.0 <= t < 282.0:
-            # Shot 39: Empty Cot Aftermath (7.0s - Emergency Broadcast Decree)
-            st = t - 275.0
-            frame[:] = zoom_pan(self.get_plate("empty_cot", width, height), st, 7.0, 1.0, 1.05)
+        elif 258.0 <= t < 276.0:
+            # Shot 35 (04:18 - 04:36): Next POV — Berlin Metro x The Matrix Subway Station
+            st = t - 258.0
+            metro_f = get_video_frame_at(os.path.join("assets", "stage2_videos", "S2_01_berlin_matrix_subway.mp4"), st, width, height)
+            frame[:] = metro_f if metro_f is not None else self.get_plate("aerial_crossroads", width, height)
             text_overlay.draw_text(
-                frame, "আপাতত টিভি সম্প্রচার অনির্দিষ্ট সময়ের জন্য বন্ধ থাকছে।",
-                (width // 2, int(height * 0.88)), font_size=int(height * 0.034), fill_color=(240, 240, 240), anchor="mm"
+                frame, "CH 09 // MATRIX U-BAHN PLATFORM",
+                (int(width * 0.04), int(height * 0.08)),
+                font_size=int(height * 0.022), fill_color=(90, 235, 120), anchor="lm"
             )
 
-        elif 282.0 <= t < 284.5:
-            # Shot 40: Horizontal Cathode Line Collapse (2.5s)
-            st = t - 282.0
+        elif 276.0 <= t < 284.0:
+            # Shot 36 (04:36 - 04:44): Weird Sound — Goofy Sci-Fi Creature Peeking from Subway Tunnel
+            st = t - 276.0
+            creat_f = get_video_frame_at(os.path.join("assets", "stage2_videos", "S2_03_goofy_scifi_creature.mp4"), st, width, height)
+            frame[:] = creat_f if creat_f is not None else self.get_plate("cosmic_eye", width, height)
+            text_overlay.draw_text(
+                frame, "CH 09 // ANOMALY DETECTED",
+                (int(width * 0.04), int(height * 0.08)),
+                font_size=int(height * 0.022), fill_color=(245, 75, 75), anchor="lm"
+            )
+
+        elif 284.0 <= t < 287.0:
+            # Shot 37 (04:44 - 04:47): CRT Cathode Pinch Decay into Mel Spectrogram Credits
+            st = t - 284.0
             frame[:, :] = [4, 4, 6]
-            line_w = int(width * max(0.02, 1.0 - (st / 2.5)))
+            line_w = int(width * max(0.01, 1.0 - (st / 2.2)))
             cv2.line(frame, (width // 2 - line_w // 2, height // 2),
                      (width // 2 + line_w // 2, height // 2), (240, 240, 235), 2)
-
-        elif 284.5 <= t < 287.0:
-            # Shot 41: Phosphor Dot Pinch Decay to Black (2.5s)
-            st = t - 284.5
-            frame[:, :] = [4, 4, 6]
-            dot_r = max(1, int(4 * (1.0 - (st / 2.5))))
-            cv2.circle(frame, (width // 2, height // 2), dot_r, (120, 240, 140), -1)
 
         else:
             # Shot 42: PURE MINIMALIST THEATRICAL END CREDITS (13.0s - 04:47 to 05:00)

@@ -16,20 +16,20 @@ import numpy as np
 from .. import text_overlay
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-SHE_PLATE_PATH = os.path.join(ROOT, "assets", "she_dream_plate.png")
-_SHE_CACHE = None
+DREAM_PLATE_PATH = os.path.join(ROOT, "assets", "noir_mel_spectrogram_bg.png")
+_DREAM_CACHE = None
 
 
 def _get_she_plate(w: int, h: int) -> np.ndarray:
-    global _SHE_CACHE
-    if _SHE_CACHE is None and os.path.exists(SHE_PLATE_PATH):
-        bgr = cv2.imread(SHE_PLATE_PATH)
+    global _DREAM_CACHE
+    if _DREAM_CACHE is None and os.path.exists(DREAM_PLATE_PATH):
+        bgr = cv2.imread(DREAM_PLATE_PATH)
         if bgr is not None:
-            _SHE_CACHE = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
-    if _SHE_CACHE is not None:
-        if _SHE_CACHE.shape[1] != w or _SHE_CACHE.shape[0] != h:
-            return cv2.resize(_SHE_CACHE, (w, h), interpolation=cv2.INTER_AREA)
-        return _SHE_CACHE.copy()
+            _DREAM_CACHE = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
+    if _DREAM_CACHE is not None:
+        if _DREAM_CACHE.shape[1] != w or _DREAM_CACHE.shape[0] != h:
+            return cv2.resize(_DREAM_CACHE, (w, h), interpolation=cv2.INTER_AREA)
+        return _DREAM_CACHE.copy()
     return np.full((h, w, 3), 18, dtype=np.uint8)
 
 
@@ -97,9 +97,9 @@ def draw_she_bipolar_seizure_motif(frame: np.ndarray,
         fade = max(0.05, 1.0 - (p - 0.90) / 0.10)
         frame[:] = np.clip(hallucination * 0.45 * fade, 0, 255).astype(np.uint8)
 
-    # Subtle dreamy 'SHE' memory watermark + phase telemetry
+    # Subtle dreamy 'NOIR' hallucination telemetry
     text_overlay.draw_text(
-        frame, f"DREAM MOTIF: SHE  |  {phase_label}",
+        frame, f"NOIR // DREAM & SEIZURE  |  {phase_label}",
         (int(w * 0.04), int(h * 0.07)),
         font_size=int(h * 0.022), fill_color=(245, 90, 90), anchor="lm"
     )
