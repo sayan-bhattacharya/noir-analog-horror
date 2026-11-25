@@ -75,7 +75,7 @@ def get_storm_frame_at(t: float, width: int, height: int) -> np.ndarray:
 
 
 def apply_siren_beep_pulse(frame: np.ndarray, t: float, audio_features: dict) -> np.ndarray:
-    """Visualizes audio siren/beep transients with subtle crimson strobe edges & alert tag."""
+    """Visualizes audio siren/beep transients with subtle crimson strobe edges (clean, zero noisy text)."""
     sub_bass = audio_features.get("sub_bass", 0.1)
     transient = audio_features.get("transient", False)
     if transient or sub_bass > 0.38:
@@ -83,14 +83,6 @@ def apply_siren_beep_pulse(frame: np.ndarray, t: float, audio_features: dict) ->
         intensity = min(1.0, (sub_bass - 0.30) * 1.8) if not transient else 0.75
         border = max(3, int(8 * intensity))
         cv2.rectangle(frame, (0, 0), (w - 1, h - 1), (220, 35, 40), border)
-        if 45.0 <= t < 93.0:
-            text_overlay.draw_text(
-                frame, "[ ! SIREN / BEEP ]",
-                (int(w * 0.96), int(h * 0.08)),
-                font_size=int(h * 0.022),
-                fill_color=(245, 75, 75),
-                anchor="rm"
-            )
     return frame
 
 
@@ -102,7 +94,7 @@ def apply_shot_transition(frame: np.ndarray, t: float) -> np.ndarray:
     h, w = frame.shape[:2]
 
     # Channel-flip cuts (Truman Show channel switching)
-    channel_cuts = [6.0, 22.0, 45.0, 90.0, 140.0, 185.0, 204.0, 218.0, 226.0, 235.0, 275.0]
+    channel_cuts = [6.0, 22.0, 45.0, 90.0, 140.0, 185.0, 204.0, 218.0, 226.0, 236.0, 300.0, 326.0, 338.0, 352.0]
     for c_t in channel_cuts:
         dt = abs(t - c_t)
         if dt < 0.22:
@@ -609,71 +601,84 @@ class NoirTimeline:
                                    font_size=int(height * 0.024), fill_color=(245, 70, 70), anchor="lm")
 
         # =========================================================================
-        # ACT VI: 03:56 PIANO SHIFT — HALF-AWAKE POV INTO EXIT 8 & MATRIX SUBWAY (03:56 - 04:47)
+        # ACT VI: 03:56 CHOKING AWAKENING -> AMNESIA -> EXIT 8 -> TRAIN HONK (03:56 - 06:00)
         # =========================================================================
-        elif 235.0 <= t < 258.0:
-            # Shot 34 (03:56 - 04:18): Piano starts; Half-Awake, Half-Asleep Blinking POV into Exit 8
-            st = t - 235.0
-            exit8_f = get_video_frame_at(os.path.join("assets", "stage2_videos", "S2_02_exit8_matrix_corridor.mp4"), st, width, height)
-            frame[:] = exit8_f if exit8_f is not None else self.get_plate("cosmic_eye", width, height)
+        elif 236.0 <= t < 256.0:
+            # Shot 34 (03:56 - 04:16): Overhead Top-Down View — Choking / Unable to Breathe in Mosquito Net
+            st = t - 236.0
+            base_net = self.get_plate("net_pov", width, height)
+            # Subtle panicked choking camera shake & claustrophobic zoom
+            tremor = math.sin(st * 16.0) * 0.015
+            frame[:] = zoom_pan(base_net, st, 20.0, 1.0 + tremor, 1.14)
+            draw_enclosed_mosquito_net(frame, width, height, t * 2.4)
+            machinist_stickman.draw_machinist_stickman(frame, width // 2, int(height * 0.62), t * 1.8, scale=1.35, is_alert=True)
+
+        elif 256.0 <= t < 280.0:
+            # Shot 35 (04:16 - 04:40): Through the Lens of the Protagonist (Half-Awake, Retrograde Amnesia)
+            st = t - 256.0
+            frame[:] = zoom_pan(self.get_plate("bedroom", width, height), st, 24.0, 1.02, 1.08)
+            draw_enclosed_mosquito_net(frame, width, height, t)
 
             # Dreamy half-awake soft-focus blur + heavy eyelid blink vignette
             blur = cv2.GaussianBlur(frame, (15, 15), 0)
-            dream_mix = 0.35 + 0.25 * math.sin(st * 1.1)
+            dream_mix = 0.32 + 0.22 * math.sin(st * 1.1)
             frame[:] = cv2.addWeighted(frame, 1.0 - dream_mix, blur, dream_mix, 0)
 
-            # Heavy eyelid blink closure (two slow groggy blinks at st ~ 2s and st ~ 11s)
             blink = 0.0
-            for bt in (2.0, 11.5):
+            for bt in (2.2, 12.0):
                 bd = abs(st - bt)
-                if bd < 0.7:
-                    blink = max(blink, 1.0 - bd / 0.7)
+                if bd < 0.75:
+                    blink = max(blink, 1.0 - bd / 0.75)
             if blink > 0.05:
                 lid_h = int((height * 0.48) * blink)
                 cv2.rectangle(frame, (0, 0), (width, lid_h), (4, 4, 6), -1)
                 cv2.rectangle(frame, (0, height - lid_h), (width, height), (4, 4, 6), -1)
 
-            if st < 4.5:
+            if st < 5.0:
                 text_overlay.draw_text(
-                    frame, "০৩:৫৬ — পিয়ানোর সুরে চোখ খুলে গেল... এটা কোথায়?",
+                    frame, "আমি... আমি কোথায়?...",
                     (width // 2, int(height * 0.86)),
-                    font_size=int(height * 0.032), fill_color=(235, 245, 235), anchor="mm"
+                    font_size=int(height * 0.034), fill_color=(235, 245, 235), anchor="mm"
                 )
 
-        elif 258.0 <= t < 276.0:
-            # Shot 35 (04:18 - 04:36): Next POV — Berlin Metro x The Matrix Subway Station
-            st = t - 258.0
+        elif 280.0 <= t < 300.0:
+            # Shot 36 (04:40 - 05:00): Retrograde Amnesia -> Unlatching & Opening the Door (04:58 Surge)
+            st = t - 280.0
+            frame[:] = zoom_pan(self.get_plate("door_latch", width, height), st, 20.0, 1.0, 1.18)
+            if st >= 17.5:
+                # Bright cool-white Exit 8 light spilling through as the door swings open at 04:58
+                spill = min(1.0, (st - 17.5) / 2.5)
+                frame[:] = np.clip(frame.astype(np.float32) + spill * 185.0, 0, 255).astype(np.uint8)
+
+        elif 300.0 <= t < 326.0:
+            # Shot 37 (05:00 - 05:26): Immediately Stepping Into Exit 8 Corridor
+            st = t - 300.0
+            exit8_f = get_video_frame_at(os.path.join("assets", "stage2_videos", "S2_02_exit8_matrix_corridor.mp4"), st, width, height)
+            frame[:] = exit8_f if exit8_f is not None else self.get_plate("aerial_crossroads", width, height)
+
+        elif 326.0 <= t < 338.0:
+            # Shot 38 (05:26 - 05:38): Entering the Berlin Metro x The Matrix Subway Platform
+            st = t - 326.0
             metro_f = get_video_frame_at(os.path.join("assets", "stage2_videos", "S2_01_berlin_matrix_subway.mp4"), st, width, height)
             frame[:] = metro_f if metro_f is not None else self.get_plate("aerial_crossroads", width, height)
-            text_overlay.draw_text(
-                frame, "CH 09 // MATRIX U-BAHN PLATFORM",
-                (int(width * 0.04), int(height * 0.08)),
-                font_size=int(height * 0.022), fill_color=(90, 235, 120), anchor="lm"
-            )
 
-        elif 276.0 <= t < 284.0:
-            # Shot 36 (04:36 - 04:44): Weird Sound — Goofy Sci-Fi Creature Peeking from Subway Tunnel
-            st = t - 276.0
-            creat_f = get_video_frame_at(os.path.join("assets", "stage2_videos", "S2_03_goofy_scifi_creature.mp4"), st, width, height)
-            frame[:] = creat_f if creat_f is not None else self.get_plate("cosmic_eye", width, height)
-            text_overlay.draw_text(
-                frame, "CH 09 // ANOMALY DETECTED",
-                (int(width * 0.04), int(height * 0.08)),
-                font_size=int(height * 0.022), fill_color=(245, 75, 75), anchor="lm"
-            )
-
-        elif 284.0 <= t < 287.0:
-            # Shot 37 (04:44 - 04:47): CRT Cathode Pinch Decay into Mel Spectrogram Credits
-            st = t - 284.0
-            frame[:, :] = [4, 4, 6]
-            line_w = int(width * max(0.01, 1.0 - (st / 2.2)))
-            cv2.line(frame, (width // 2 - line_w // 2, height // 2),
-                     (width // 2 + line_w // 2, height // 2), (240, 240, 235), 2)
+        elif 338.0 <= t < 352.0:
+            # Shot 39 (05:38 - 05:52): 05:38 TRAIN HONK PEAK (0.821) -> The Haunted Train Arrives
+            st = t - 338.0
+            train_f = get_video_frame_at(os.path.join("assets", "haunted_archive_videos", "F_pather_train_never_arrives.mp4"), st, width, height)
+            metro_f = get_video_frame_at(os.path.join("assets", "stage2_videos", "S2_01_berlin_matrix_subway.mp4"), st + 12.0, width, height)
+            if train_f is not None and metro_f is not None:
+                frame[:] = cv2.addWeighted(metro_f, 0.38, train_f, 0.62, 0)
+            elif train_f is not None:
+                frame[:] = train_f
+            else:
+                frame[:] = self.get_plate("aerial_crossroads", width, height)
 
         else:
-            # Shot 42: PURE MINIMALIST THEATRICAL END CREDITS (13.0s - 04:47 to 05:00)
-            st = t - 287.0
-            frame = text_overlay.draw_minimal_end_credits(frame, t=st)
+            # Shot 40 (05:52 - 06:00): Goofy Sci-Fi Creature Peeks Out from Subway Tunnel (Cliffhanger)
+            st = t - 352.0
+            creat_f = get_video_frame_at(os.path.join("assets", "stage2_videos", "S2_03_goofy_scifi_creature.mp4"), st, width, height)
+            frame[:] = creat_f if creat_f is not None else self.get_plate("cosmic_eye", width, height)
 
         # Apply siren/beep reactive visual pulses + analog CRT channel-switch bursts
         frame = apply_siren_beep_pulse(frame, t, audio_features)
@@ -694,10 +699,7 @@ class NoirTimeline:
             (132.0 <= t < 140.0) or
             (147.0 <= t < 154.0) or
             (162.0 <= t < 169.0) or
-            (182.0 <= t < 194.0) or
-            (244.0 <= t < 252.0) or
-            (263.0 <= t < 273.0) or
-            (t >= 287.0)
+            (182.0 <= t < 194.0)
         )
 
         if is_text_card:
