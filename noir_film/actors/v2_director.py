@@ -251,37 +251,33 @@ def draw_exit0_hud(frame: np.ndarray, t: float, width: int, height: int, show_an
 
 
 def draw_opening_fictional_disclaimer(frame: np.ndarray, width: int, height: int):
-    """00:00 - 00:04 Crystal-clear opening fictional & statutory health notice."""
-    frame[:, :] = [8, 9, 12]
-    # Subtle warm gold frame border
-    pad_x, pad_y = int(width * 0.08), int(height * 0.12)
-    cv2.rectangle(frame, (pad_x, pad_y), (width - pad_x, height - pad_y), (175, 145, 55), 2)
+    """00:00 - 00:05 Plain, serious English and Bengali disclaimer in clean white text."""
+    frame[:, :] = [6, 6, 8]
 
     text_overlay.draw_text(
-        frame, "DISCLAIMER  |  বিজ্ঞপ্তি",
+        frame, "DISCLAIMER",
         (width // 2, int(height * 0.24)),
-        font_size=int(height * 0.042), fill_color=(245, 205, 55), anchor="mm"
+        font_size=int(height * 0.032), fill_color=(236, 236, 240), anchor="mm", with_shadow=False
     )
     text_overlay.draw_text(
         frame, "All characters, events, and broadcasts in this film are purely fictional.",
-        (width // 2, int(height * 0.40)),
-        font_size=int(height * 0.030), fill_color=(242, 244, 248), anchor="mm"
+        (width // 2, int(height * 0.36)),
+        font_size=int(height * 0.028), fill_color=(232, 232, 236), anchor="mm", with_shadow=False
     )
     text_overlay.draw_text(
         frame, "এই চলচ্চিত্রের সমস্ত চরিত্র, ঘটনা ও সম্প্রচার সম্পূর্ণ কাল্পনিক।",
-        (width // 2, int(height * 0.50)),
-        font_size=int(height * 0.032), fill_color=(220, 230, 225), anchor="mm"
+        (width // 2, int(height * 0.45)),
+        font_size=int(height * 0.030), fill_color=(232, 232, 236), anchor="mm", with_shadow=False
     )
-    cv2.line(frame, (int(width * 0.22), int(height * 0.62)), (int(width * 0.78), int(height * 0.62)), (95, 95, 105), 1)
     text_overlay.draw_text(
-        frame, "STATUTORY WARNING: SMOKING IS INJURIOUS TO HEALTH & CAUSES CANCER.",
+        frame, "Smoking is injurious to health and causes cancer.",
+        (width // 2, int(height * 0.64)),
+        font_size=int(height * 0.024), fill_color=(208, 208, 214), anchor="mm", with_shadow=False
+    )
+    text_overlay.draw_text(
+        frame, "ধূমপান স্বাস্থ্যের পক্ষে ক্ষতিকর ও ক্যান্সারের কারণ।",
         (width // 2, int(height * 0.72)),
-        font_size=int(height * 0.023), fill_color=(235, 95, 90), anchor="mm"
-    )
-    text_overlay.draw_text(
-        frame, "বিধিবদ্ধ সতর্কীকরণ: ধূমপান স্বাস্থ্যের পক্ষে ক্ষতিকর ও ক্যান্সারের কারণ।",
-        (width // 2, int(height * 0.79)),
-        font_size=int(height * 0.025), fill_color=(235, 130, 120), anchor="mm"
+        font_size=int(height * 0.026), fill_color=(208, 208, 214), anchor="mm", with_shadow=False
     )
 
 
