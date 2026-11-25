@@ -1,10 +1,12 @@
 # PROJECT NOIR / NISHIDAK VISUAL ENGINE
 ## নিশিডাক — THE NISHIDAK BROADCAST
 
-A minimal, highly controllable, modular Python visual engine for the 3-minute experimental analog-horror film:
+A minimal, highly controllable, modular Python visual engine for the current 5:52 NOIR compositor workprint:
 **“নিশিডাক — THE NISHIDAK BROADCAST”**.
 
 Simulates a corrupted 1994 Doordarshan Kendra Calcutta (DD-1 Bangla) emergency transmission interrupted by cosmic, folk-horror signals from rural Bengal (Nistobdhopur).
+
+The separate master screenplay and `Noir.wav` score run 30:22; the current compositor timeline ends at 05:52. The Colab notebook renders the implemented workprint only and requires the original `Noir.wav` file (it never substitutes podcast audio).
 
 ---
 

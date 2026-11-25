@@ -26,20 +26,20 @@ CACHE_DIR = os.path.join(ROOT, "output", "module_cache")
 
 # Declarative shot modules covering [0.0, 360.0]
 SHOT_MODULES = [
-    ("S00_disclaimer",       0.0,   5.0,  ["noir_film/actors/v2_director.py"]),
-    ("S01_station_id",       5.0,   9.0,  ["noir_film/actors/doordarshan_alert.py", "noir_film/actors/v2_director.py"]),
-    ("S02_btn24_geo",        9.0,  14.0,  ["noir_film/actors/news_broadcast.py", "assets/v2_videos/V2_01_bengal_geography.mp4"]),
+    ("S00_logo_to_dish",     0.0,   5.0,  ["noir_film/timeline.py", "noir_film/actors/doordarshan_alert.py"]),
+    ("S01_story_cut",        5.0,   9.0,  ["noir_film/timeline.py", "noir_film/actors/v2_director.py", "assets/v2_videos/V2_01_bengal_geography.mp4"]),
+    ("S02_btn24_geo",        9.0,  14.0,  ["noir_film/timeline.py", "noir_film/actors/news_broadcast.py", "assets/v2_videos/V2_01_bengal_geography.mp4"]),
     ("S03_btn24_alert",     14.0,  22.0,  ["noir_film/actors/news_broadcast.py", "assets/storm_loop.mp4"]),
     ("S04_cartography",     22.0,  29.0,  ["noir_film/actors/v2_director.py", "noir_film/actors/sector_map.py"]),
     ("S05_civil_danger",    29.0,  37.0,  ["noir_film/actors/civil_danger.py", "noir_film/actors/v2_director.py"]),
     ("S06_card_knock",      37.0,  41.0,  ["noir_film/text_overlay.py"]),
     ("S07_card_not_mom",    41.0,  45.0,  ["noir_film/text_overlay.py"]),
     ("S08_cat_shadow",      45.0,  53.0,  ["noir_film/actors/v2_director.py", "assets/v2_videos/V2_02_cat_shadow_turn.mp4"]),
-    ("S09_rule1_smoke",     53.0,  60.0,  ["noir_film/actors/machinist_stickman.py", "noir_film/actors/v2_director.py", "noir_film/text_overlay.py"]),
-    ("S10_drone_tubewell",  60.0,  67.0,  ["noir_film/actors/machinist_stickman.py", "assets/flow_drone_courtyard.mp4", "assets/flow_closeup_tubewell.mp4"]),
-    ("S11_door_latch",      67.0,  74.0,  ["plates/scene-06.jpeg"]),
+    ("S09_rule1_smoke",     53.0,  60.0,  ["noir_film/actors/machinist_stickman.py", "noir_film/actors/v2_director.py", "noir_film/actors/cloud_timelapse.py", "noir_film/text_overlay.py"]),
+    ("S10_drone_tubewell",  60.0,  67.0,  ["noir_film/actors/machinist_stickman.py", "noir_film/actors/tubewell_scene.py", "assets/flow_drone_courtyard.mp4"]),
+    ("S11_door_latch",      67.0,  74.0,  ["noir_film/timeline.py", "plates/scene-06.jpeg"]),
     ("S12_first_call",      74.0,  80.0,  ["noir_film/text_overlay.py"]),
-    ("S13_dossier_1994",    80.0,  86.0,  ["plates/scene-24.jpeg"]),
+    ("S13_dossier_1994",    80.0,  86.0,  ["noir_film/timeline.py", "plates/scene-24.jpeg"]),
     ("S14_dead_phone",      86.0,  90.0,  ["plates/scene-08.jpeg"]),
     ("S15_bedroom_bike",    90.0,  97.0,  ["noir_film/actors/v2_director.py", "assets/v2_videos/bike_headlight_greenscreen.mp4", "plates/scene-11.jpeg"]),
     ("S16_rule2",           97.0, 104.0,  ["noir_film/text_overlay.py", "plates/scene-11.jpeg"]),
@@ -71,6 +71,7 @@ SHOT_MODULES = [
 ]
 
 SHARED_CORE_FILES = [
+    "noir_film/audio_map.py",
     "noir_film/crt.py",
     "noir_film/vhs.py",
     "noir_film/text_overlay.py",

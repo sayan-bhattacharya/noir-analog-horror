@@ -1,7 +1,6 @@
 """
 Audio Analysis and Visual Hyperparameter Mapping for Project NOIR / Between the Notes.
-Extracts speech cadence, RMS energy, conversational bursts, and sub-bass transients
-from BetweenTheNotes_Podcast_5min.wav, Noir.wav, or Between the notes podcast audio.m4a.
+Extracts RMS energy and sub-bass transients from the NOIR film's 30:22 master track, Noir.wav.
 """
 import os
 import soundfile as sf
@@ -11,14 +10,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def find_default_audio_path():
-    """Finds the most appropriate master audio file in project hierarchy."""
-    candidates = [
-        os.path.join(ROOT, "audio", "BetweenTheNotes_Podcast_5min.wav"),
-        os.path.join(ROOT, "audio", "Noir.wav"),
-        os.path.join(ROOT, "Noir.wav"),
-        r"E:\betweenthenotes\transcription\podcast_opening_5min.wav",
-        r"E:\betweenthenotes\Between the notes podcast audio.m4a"
-    ]
+    """Resolve only NOIR's own score; never substitute a podcast recording."""
+    candidates = [os.path.join(ROOT, "Noir.wav"), os.path.join(ROOT, "audio", "Noir.wav")]
     for path in candidates:
         if os.path.exists(path):
             return path

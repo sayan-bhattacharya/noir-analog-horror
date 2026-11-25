@@ -14,6 +14,7 @@ Calibrated to the Silent Reading Timing Table & User Creative Direction:
 - 4:47 Mark: Minimalist Between the Notes End Credits.
 - Tuned noise/haze for grounded cinematic realism.
 """
+import math
 import os
 import math
 import cv2
@@ -159,6 +160,93 @@ def zoom_pan(plate, local_t, duration, zoom_start=1.0, zoom_end=1.06, pan_x=0, p
     return cv2.warpAffine(plate, M, (w, h), borderMode=cv2.BORDER_REFLECT)
 
 
+def draw_opening_logo_to_dish(frame, t, width, height, audio_features):
+    """Morph the station emblem into a dish; the beam pulse follows the siren envelope."""
+    frame[:] = (5, 5, 12)
+    rng = np.random.default_rng(1994)
+    for x, y, r in zip(rng.integers(15, width - 15, 42), rng.integers(12, height - 12, 42), rng.integers(1, 3, 42)):
+        cv2.circle(frame, (int(x), int(y)), int(r), (68, 70, 83), -1, cv2.LINE_AA)
+
+    morph = min(1.0, max(0.0, t / 1.45))
+    ease = morph * morph * (3.0 - 2.0 * morph)
+    logo_layer = frame.copy()
+    doordarshan_alert.draw_between_the_notes_logo(
+        logo_layer, width // 2, int(height * .38), radius=int(height * .15), t=t,
+        rotation_speed=.18, pupil_twitch=False)
+    cv2.addWeighted(logo_layer, 1.0 - ease, frame, ease, 0, frame)
+
+    dish = frame.copy()
+    cx, rim_y, rx, ry = width // 2, int(height * .69), int(width * .19), int(height * .13)
+    pts = []
+    for px in np.linspace(-1.0, 1.0, 60):
+        pts.append((int(cx + px * rx), int(rim_y + (px * px) * ry)))
+    cv2.polylines(dish, [np.asarray(pts, np.int32)], False, (178, 193, 211), 4, cv2.LINE_AA)
+    cv2.ellipse(dish, (cx, rim_y), (rx, max(3, int(height * .018))), 0, 0, 180, (122, 146, 174), 2, cv2.LINE_AA)
+    cv2.line(dish, (cx, rim_y + int(ry * .9)), (cx, int(height * .91)), (110, 127, 149), 4, cv2.LINE_AA)
+    cv2.line(dish, (cx - int(rx * .53), rim_y + int(ry * .54)), (cx + int(rx * .38), rim_y - int(ry * .21)), (178, 193, 211), 3, cv2.LINE_AA)
+    cv2.circle(dish, (cx + int(rx * .38), rim_y - int(ry * .21)), max(4, int(height * .012)), (226, 231, 240), -1, cv2.LINE_AA)
+    cv2.addWeighted(dish, ease, frame, 1.0 - ease, 0, frame)
+
+    if t >= .52:
+        progress = min(1.0, (t - .52) / .92)
+        beam_top = int(rim_y - height * (.52 * progress))
+        transient = 0.24 if audio_features.get("transient", False) else 0.0
+        rms = float(audio_features.get("rms", .1))
+        pulse = .52 + .22 * math.sin(t * 2.0 * math.pi * 1.7) + min(.22, rms * .2) + transient
+        beam = frame.copy()
+        bx = cx + int(rx * .38)
+        cv2.line(beam, (bx, rim_y - int(ry * .2)), (cx, beam_top), (244, 220, 147), 2, cv2.LINE_AA)
+        cv2.line(beam, (bx, rim_y - int(ry * .2)), (cx, beam_top), (255, 248, 218), 1, cv2.LINE_AA)
+        cv2.addWeighted(beam, min(.85, pulse), frame, 1.0 - min(.85, pulse), 0, frame)
+    return frame
+
+
+def draw_door_latch_micro_animation(frame, t):
+    """Small rust flakes and a barely perceptible latch shiver imply recent force."""
+    h, w = frame.shape[:2]
+    dx = int(round(math.sin(t * 17.0) * 1.0))
+    if dx:
+        frame[:] = cv2.warpAffine(frame, np.float32([[1, 0, dx], [0, 1, 0]]), (w, h), borderMode=cv2.BORDER_REFLECT)
+    # Seeded trajectories keep flakes deterministic across cached and direct renders.
+    for i in range(7):
+        phase = (t * .44 + i * .137) % 1.0
+        x0 = int(w * (.43 + .20 * ((i * 37 % 11) / 10.0)))
+        y = int(h * (.39 + phase * .32))
+        x = x0 + int(math.sin(phase * 9 + i) * w * .009)
+        radius = max(1, int(min(w, h) * (.0025 + (i % 3) * .0008)))
+        color = (38, 72, 132) if i % 2 else (45, 88, 158)
+        cv2.ellipse(frame, (x, y), (radius, max(1, radius // 2)), i * 21, 0, 360, color, -1, cv2.LINE_AA)
+    return frame
+
+
+def draw_ambiguous_sky_silhouette(frame, t):
+    """A cloud-softened, unresolved shape briefly appears above the field camera."""
+    h, w = frame.shape[:2]
+    local = t - 47.0
+    reveal = max(0.0, min(1.0, local / .8, (5.0 - local) / .9))
+    if reveal <= 0:
+        return frame
+    cx = int(w * (.68 + .018 * math.sin(local * .35)))
+    cy = int(h * .22)
+    mask = np.zeros((h, w), dtype=np.uint8)
+    pts = np.array([
+        [cx - int(w * .062), cy + int(h * .008)],
+        [cx - int(w * .025), cy - int(h * .030)],
+        [cx + int(w * .012), cy - int(h * .018)],
+        [cx + int(w * .052), cy - int(h * .040)],
+        [cx + int(w * .035), cy + int(h * .004)],
+        [cx + int(w * .063), cy + int(h * .028)],
+        [cx + int(w * .010), cy + int(h * .018)],
+        [cx - int(w * .040), cy + int(h * .035)],
+    ], np.int32)
+    cv2.fillPoly(mask, [pts], 125)
+    mask = cv2.GaussianBlur(mask, (0, 0), max(3, int(h * .018))).astype(np.float32) / 255.0
+    alpha = (mask * reveal * .50)[:, :, None]
+    shade = np.zeros_like(frame, dtype=np.float32) + np.array([4, 5, 9], dtype=np.float32)
+    frame[:] = np.clip(frame.astype(np.float32) * (1.0 - alpha) + shade * alpha, 0, 255).astype(np.uint8)
+    return frame
+
+
 def draw_enclosed_mosquito_net(frame: np.ndarray, width: int, height: int, t: float):
     """
     Subtle atmospheric sheer textile breathing and claustrophobic vignette over the bedroom plate.
@@ -255,24 +343,21 @@ class NoirTimeline:
         # =========================================================================
         # ACT I: THE EMERGENCY BROADCAST INTERRUPTION & ALERT (00:00 - 00:45)
         # =========================================================================
-        if t < 5.0:
-            # Shot 0: Opening Fictional & Statutory Disclaimer (5.0s generous reading time)
-            v2_director.draw_opening_fictional_disclaimer(frame, width, height)
+        if t < 2.0:
+            # Station emblem morphs into a dish; hard cut to the story at 00:02.
+            draw_opening_logo_to_dish(frame, t, width, height, audio_features)
 
-        elif 5.0 <= t < 9.0:
-            # Shot 1: Between the Notes Station ID & Emergency Signal Override
-            doordarshan_alert.draw_between_the_notes_logo(frame, width // 2, int(height * 0.32), radius=int(height * 0.12), t=t)
-            text_overlay.draw_text(frame, "বিটুইন দ্য নোটস সম্প্রচার কেন্দ্র কলকাতা", (width // 2, int(height * 0.58)),
-                                   font_size=int(height * 0.040), fill_color=(245, 205, 55), anchor="mm")
-            text_overlay.draw_text(frame, "BETWEEN THE NOTES NETWORK • বিশেষ জরুরি অধিবেশন", (width // 2, int(height * 0.66)),
-                                   font_size=int(height * 0.026), fill_color=(212, 175, 55), anchor="mm")
-            text_overlay.draw_text(frame, "নিস্তব্ধপুর গ্রামীণ এলাকা থেকে সরাসরি সম্প্রচার", (width // 2, int(height * 0.73)),
-                                   font_size=int(height * 0.022), fill_color=(180, 215, 180), anchor="mm")
-            v2_director.draw_crimson_point(frame, t, cx=int(width * 0.94), cy=int(height * 0.075), radius=4)
+        elif 2.0 <= t < 9.0:
+            # First story shot begins on the hard cut and stays continuous across 00:05.
+            st = t - 2.0
+            geo_f = get_video_frame_at(os.path.join("assets", "v2_videos", "V2_01_bengal_geography.mp4"), st, width, height)
+            storm_f = get_storm_frame_at(t, width, height)
+            frame[:] = geo_f if geo_f is not None else (storm_f if storm_f is not None else zoom_pan(self.get_plate("stormy_homestead", width, height), st, 12.0, 1.0, 1.05))
+            v2_director.draw_channel_hud(frame, "CH 03 // SIGNAL ACQUIRED", t, color=(90, 220, 120))
 
         elif 9.0 <= t < 14.0:
             # Shot 2: CH 03 Bengal Geography / BTN 24 News Broadcast (5.0s - Clean V2 Geography or Storm Loop)
-            st = t - 9.0
+            st = t - 2.0
             geo_f = get_video_frame_at(os.path.join("assets", "v2_videos", "V2_01_bengal_geography.mp4"), st, width, height)
             storm_f = get_storm_frame_at(t, width, height)
             if geo_f is not None:
@@ -356,13 +441,15 @@ class NoirTimeline:
                 frame[:] = cat_f
             else:
                 v2_director.draw_cat_shadow_turn_scene(frame, t, st, width, height)
+            if 47.0 <= t < 52.0:
+                draw_ambiguous_sky_silhouette(frame, t)
             v2_director.draw_channel_hud(frame, "CH 03 // FIELD CAM", t, color=(90, 235, 120), sub_label="NISTOBDHOPUR")
 
         elif 53.0 <= t < 60.0:
             # Shot 9: Rule 1 Civil Defense Card + Walking & Smoking Machinist Stick-Man + Cancer Warning
             st = t - 53.0
             base_plate = self.get_plate("homestead", width, height)
-            frame[:] = cloud_timelapse.composite_sky_timelapse_on_plate(base_plate, t, sky_cutoff=0.44)
+            frame[:] = cloud_timelapse.composite_sky_timelapse_on_plate(base_plate, t, sky_cutoff=0.44, speed=0.24)
             banana_trees.draw_banana_tree(frame, int(width * 0.88), height, t, scale=0.85)
             walk_x = int(width * (0.28 + st * 0.022))
             machinist_stickman.draw_machinist_stickman(
@@ -378,22 +465,28 @@ class NoirTimeline:
             )
 
         elif 60.0 <= t < 67.0:
-            # Shot 10: 1:00 - 1:07 MARK - Google Flow Drone Aerial Angle + Tube-Well Black Oil Close-Up
+            # One courtyard source: wide view first, then a digital move toward the same pump.
             st = t - 60.0
+            drone_f = get_video_frame_at(os.path.join("assets", "flow_drone_courtyard.mp4"), st, width, height)
             if st < 3.5:
-                # Angle 1: Google Flow Drone Aerial Sweep over Courtyard & Tube-Well + Machinist Stick-Man
-                drone_f = get_video_frame_at(os.path.join("assets", "flow_drone_courtyard.mp4"), st, width, height)
                 frame[:] = drone_f if drone_f is not None else zoom_pan(self.get_plate("aerial_crossroads", width, height), st, 3.5, 1.0, 1.12)
                 machinist_stickman.draw_machinist_stickman(frame, int(width * 0.32), int(height * 0.68), t, scale=0.85, walk_phase=st * 3.0, is_alert=True)
-                loc_str = "22.9868° N, 87.8550° E" if 1.2 <= st < 2.7 else "LOCATION: NISTOBDHOPUR"
+                loc_str = "22.9868? N, 87.8550? E" if 1.2 <= st < 2.7 else "LOCATION: NISTOBDHOPUR"
                 v2_director.draw_channel_hud(frame, "CH 03 // FIELD CAM", t, color=(90, 235, 120), sub_label=loc_str)
             else:
-                # Angle 2: Google Flow Close-Up Facing Tube-Well Dripping Thick Black Oil
-                pump_f = get_video_frame_at(os.path.join("assets", "flow_closeup_tubewell.mp4"), st - 3.5, width, height)
-                if pump_f is not None:
-                    frame[:] = pump_f
+                close_progress = min(1.0, (st - 3.5) / 3.5)
+                pump_zoom = 1.0 + 0.55 * close_progress
+                if drone_f is not None:
+                    track = min(1.0, max(0.0, (st - 4.8) / 2.0))
+                    track = track * track * (3.0 - 2.0 * track)
+                    pump_x = int(width * (0.25 + 0.42 * track))
+                    pump_y = int(height * (0.49 + 0.13 * track))
+                    transform = cv2.getRotationMatrix2D((pump_x, pump_y), 0, pump_zoom)
+                    transform[0, 2] += (width * 0.50 - pump_x) * close_progress
+                    transform[1, 2] += (height * 0.52 - pump_y) * close_progress
+                    frame[:] = cv2.warpAffine(drone_f, transform, (width, height), borderMode=cv2.BORDER_REFLECT)
                 else:
-                    frame[:] = zoom_pan(self.get_plate("rusted_handpump", width, height), st - 3.5, 3.5, 1.0, 1.08)
+                    frame[:] = zoom_pan(self.get_plate("rusted_handpump", width, height), st - 3.5, 3.5, 1.0, pump_zoom)
                     tubewell_scene.draw_oil_drip_closeup(frame, t, width, height)
                 v2_director.draw_channel_hud(frame, "CAM 02 // TUBE-WELL CLOSE-UP", t, color=(245, 70, 70))
 
@@ -401,6 +494,7 @@ class NoirTimeline:
             # Shot 11: Macro B-Roll - Weathered Teak Door & Rusted Latch (7.0s - Macro B-Roll)
             st = t - 67.0
             frame[:] = zoom_pan(self.get_plate("door_latch", width, height), st, 7.0, 1.0, 1.08)
+            draw_door_latch_micro_animation(frame, st)
 
         elif 74.0 <= t < 80.0:
             # Shot 12: Broadcast Card 3 - The First Call (6.0s - Normal Dialogue Card)
@@ -414,6 +508,18 @@ class NoirTimeline:
             # Shot 13: Archival B-Roll - 1994 Yellowed Bengali Newspaper Cutting (6.0s - Hidden Message / Lore)
             st = t - 80.0
             frame[:] = zoom_pan(self.get_plate("newspaper_cutting", width, height), st, 6.0, 1.0, 1.07)
+            x1, x2 = int(width * .205), int(width * .795)
+            y1, y2 = int(height * .355), int(height * .515)
+            paper = frame.copy()
+            cv2.rectangle(paper, (x1, y1), (x2, y2), (199, 187, 153), -1)
+            cv2.rectangle(paper, (x1, y1), (x2, y2), (94, 76, 52), 2)
+            cv2.addWeighted(paper, .94, frame, .06, 0, frame)
+            text_overlay.draw_text(frame, "????? ???????????? ?????", (width // 2, int(height * .415)),
+                                   font_size=int(height * .046), fill_color=(43, 38, 32), anchor="mm",
+                                   max_width=int(width * .56), with_shadow=False)
+            text_overlay.draw_text(frame, "IN SEARCH OF NIKOJ VILLAGERS", (width // 2, int(height * .475)),
+                                   font_size=int(height * .018), fill_color=(67, 58, 45), anchor="mm",
+                                   max_width=int(width * .54), with_shadow=False)
             text_overlay.draw_text(
                 frame, "সরকারি নথি ১৯৯৪: নিস্তব্ধপুর তদন্ত",
                 (width // 2, int(height * 0.12)), font_size=int(height * 0.034), fill_color=(240, 210, 60), anchor="mm"
@@ -519,7 +625,7 @@ class NoirTimeline:
             # Shot 22: CH 03 // FIELD CAM - Hyper-Object Figure perched on Locked-off Fence + Sky Time-Lapse
             st = t - 140.0
             base_plate = self.get_plate("homestead", width, height)
-            frame[:] = cloud_timelapse.composite_sky_timelapse_on_plate(base_plate, t, sky_cutoff=0.44)
+            frame[:] = cloud_timelapse.composite_sky_timelapse_on_plate(base_plate, t, sky_cutoff=0.44, speed=0.16, reverse=True, phase=1500.0)
             banana_trees.draw_banana_tree(frame, int(width * 0.88), height, t, scale=0.85)
             hulo_cat.draw_shadowy_figure(frame, t, cx=int(width * 0.52), cy=int(height * 0.68), stretch_factor=0.0)
             text_overlay.draw_text(frame, "CH 03 // FIELD CAM", (int(w := width) * 0.04, int(height * 0.08)),
@@ -542,8 +648,9 @@ class NoirTimeline:
         elif 154.0 <= t < 162.0:
             # Shot 24: 2:33 MARK - COURAGE-STYLE TWILIGHT VEGETATION, GIANT MOON & ELONGATING HYPER-OBJECT
             st = t - 154.0
-            stretch = min(1.0, st / 7.0)
-            cloud_timelapse.render_cloud_timelapse_sky(frame, t, width, height, cloud_speed=50.0)
+            raw_growth = min(1.0, max(0.0, st / 7.0))
+            stretch = 0.72 * raw_growth * raw_growth * (3.0 - 2.0 * raw_growth)
+            cloud_timelapse.render_cloud_timelapse_sky(frame, t, width, height, cloud_speed=12.0)
             v2_director.draw_courage_nowhere_vegetation(frame, t, width, height, stretch_factor=stretch)
             banana_trees.draw_banana_tree(frame, int(width * 0.90), height, t, scale=0.85, wind_strength=0.7)
             hulo_cat.draw_shadowy_figure(frame, t, cx=int(width * 0.52), cy=int(height * 0.68), stretch_factor=stretch)
@@ -586,39 +693,63 @@ class NoirTimeline:
         # ACT V: DESCENT... - THE BLACK GLUEY META-OBJECT & TRUMAN FALL (03:05 - 03:55)
         # =========================================================================
         elif 185.0 <= t < 193.0:
-            # Shot 29: DESCENT... Title Slate (8.0s - High Readability Broadcast Card)
+            # Single red question mark and Morse signal interrupt the descent slate at 03:06.
             st = t - 185.0
-            text_overlay.draw_broadcast_readability_card(
-                frame, "DESCENT...\nবিটুইন দ্য নোটস: মহাকর্ষের পতন",
-                "[ EPISODE ZERO: HE WOKE TO THE NISHIR DAAK AND STEPPED INTO THE HOLE ]", t=st
-            )
+            if 1.0 <= st < 2.5:
+                text_overlay.draw_intercepted_question_signal(frame, t)
+            else:
+                text_overlay.draw_broadcast_readability_card(
+                    frame, "DESCENT...\n?????????????????? ????????? ????????????: ??????????????????????????? ?????????",
+                    "[ EPISODE ZERO: HE WOKE TO THE NISHIR DAAK AND STEPPED INTO THE HOLE ]", t=st
+                )
 
         elif 193.0 <= t < 204.0:
-            # Shot 30: Confronting the Black Gluey Hole -> Pulled Spiraling Into the Abyss (11.0s)
+            # Shot 30: Bimal emerges, approaches the courtyard portal, then absurdly steps/falls in.
             st = t - 193.0
             base_plate = self.get_plate("homestead", width, height)
-            frame[:] = cloud_timelapse.composite_sky_timelapse_on_plate(base_plate, t, sky_cutoff=0.44)
-            hole_prog = min(1.0, st / 4.0)
-            frame = descent_fall.draw_gluey_meta_hole(frame, t, progress=hole_prog, sub_bass=sub_bass)
-            hole_cx, hole_cy = width // 2, int(height * 0.66)
-            if st < 5.5:
-                # Stick-man walks up to the edge and confronts the black hole
-                walk_p = min(1.0, st / 4.0)
-                sx = int(width * (0.24 + 0.18 * walk_p))
-                sy = int(height * 0.70)
+            # Keep the courtyard grounded: only slow, low-contrast clouds move above the still house.
+            frame[:] = cloud_timelapse.composite_sky_timelapse_on_plate(
+                base_plate, t, sky_cutoff=0.44, speed=0.045, reverse=False, phase=820.0
+            )
+            hole_cx, hole_cy = int(width * 0.29), int(height * 0.84)
+            # The hole stays compact and swells gently as the violet rim lights wake up.
+            grow = min(1.0, max(0.0, st / 8.0))
+            hole_prog = grow * grow * (3.0 - 2.0 * grow)
+            frame = descent_fall.draw_gluey_meta_hole(
+                frame, t, progress=hole_prog, sub_bass=sub_bass,
+                center=(hole_cx, hole_cy), max_width=0.05, max_height=0.032,
+                tendril_strength=0.18
+            )
+            # Slow, wary gait; at the lip he loses footing, skids, then drops into the opening.
+            approach = min(1.0, max(0.0, st / 6.3))
+            approach = approach * approach * (3.0 - 2.0 * approach)
+            if st < 6.3:
+                sx = int(width * (0.19 + 0.10 * approach))
+                sy = int(height * (0.69 + 0.12 * approach))
+                sc = 0.92
                 machinist_stickman.draw_machinist_stickman(
-                    frame, sx, sy, t, scale=0.95, walk_phase=st * 3.0 if st < 4.0 else 0.0, is_alert=(st >= 3.5)
+                    frame, sx, sy, t, scale=sc, walk_phase=st * 1.25,
+                    is_alert=(st >= 5.0)
+                )
+            elif st < 7.15:
+                slip = (st - 6.3) / 0.85
+                # His planted foot slides past the rim; shoulders pitch and knees buckle.
+                sx = int(width * (0.29 + 0.018 * slip))
+                sy = int(height * (0.81 + 0.045 * slip))
+                sc = 0.92 * (1.0 - 0.08 * slip)
+                machinist_stickman.draw_machinist_stickman(
+                    frame, sx, sy, t, scale=sc, walk_phase=st * 1.4,
+                    is_alert=True, falling=True
                 )
             else:
-                # Gravity fails: pulled into the black hole swirl seamlessly before Shot 31
-                pull = min(1.0, (st - 5.5) / 5.2)
-                angle = pull * math.pi * 4.5
-                rad = (1.0 - pull) * width * 0.14
-                sx = int(hole_cx + math.cos(angle) * rad)
-                sy = int(hole_cy + math.sin(angle) * rad * 0.45)
-                sc = max(0.18, 0.95 * (1.0 - pull * 0.82))
+                fall = min(1.0, max(0.0, (st - 7.15) / 2.25))
+                # Slide into the portal while the figure drops and rapidly recedes.
+                sx = int(width * (0.308 + 0.018 * fall))
+                sy = int(height * (0.855 + 0.12 * fall))
+                sc = max(0.16, 0.84 * (1.0 - 0.80 * fall))
                 machinist_stickman.draw_machinist_stickman(
-                    frame, sx, sy, t, scale=sc, walk_phase=st * 6.0, is_alert=True
+                    frame, sx, sy, t, scale=sc, walk_phase=st * 1.6,
+                    is_alert=True, falling=True
                 )
             text_overlay.draw_text(frame, "CH 07 // COURTYARD ANOMALY", (int(width * 0.04), int(height * 0.08)),
                                    font_size=int(height * 0.024), fill_color=(245, 70, 70), anchor="lm")
@@ -786,7 +917,19 @@ class NoirTimeline:
             (300.0 <= t < 338.0)
         )
 
-        if is_clean_v2_layer:
+        if 193.0 <= t < 204.0:
+            # Shot 30 is mostly calm and legible; reserve one tiny tape disturbance for the passage.
+            frame = crt.apply_crt(
+                frame, curvature=0.01, scanline_strength=0.055,
+                vignette_strength=0.13, chromatic_aberration_px=0.25,
+                head_switching_px=0, sub_bass=0.0, t=t
+            )
+            st = t - 193.0
+            if 5.25 <= st < 5.42:
+                frame = vhs.apply_vhs_tracking(
+                    frame, t, tear_strength=0.08, tracking_prob=0.18, sub_bass=0.0
+                )
+        elif is_clean_v2_layer:
             # Ultra-mild post-processing to guarantee 100% crispness, zero jitter, and readability
             frame = crt.apply_crt(
                 frame,

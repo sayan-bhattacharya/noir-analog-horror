@@ -11,17 +11,21 @@ from .. import text_overlay
 
 
 def draw_gluey_meta_hole(frame: np.ndarray, t: float, progress: float = 1.0,
-                         sub_bass: float = 0.2) -> np.ndarray:
+                         sub_bass: float = 0.2,
+                         center: tuple[int, int] | None = None,
+                         max_width: float = 0.30,
+                         max_height: float = 0.18,
+                         tendril_strength: float = 1.0) -> np.ndarray:
     """
     Renders a viscous, pitch-black gluey meta-object portal opening up,
     with glossy tar-like rim highlights and stretching sticky tendrils.
     """
     h, w = frame.shape[:2]
-    cx, cy = w // 2, int(h * 0.56)
+    cx, cy = center if center is not None else (w // 2, int(h * 0.56))
 
     # Expand hole radius smoothly with progress
-    max_rx = int(w * 0.36 * progress)
-    max_ry = int(h * 0.24 * progress)
+    max_rx = int(w * max_width * progress)
+    max_ry = int(h * max_height * progress)
     if max_rx < 8 or max_ry < 6:
         return frame
 
@@ -38,22 +42,66 @@ def draw_gluey_meta_hole(frame: np.ndarray, t: float, progress: float = 1.0,
 
     pts_arr = np.array(pts, np.int32)
 
-    # Outer dark tar seepage halo
+    # Diffused violet-purple neon from discrete perimeter lamps.
+    saffron = (190, 72, 216)  # BGR: neon violet-purple rim
+    lamp_glow = np.zeros_like(frame)
+    lamp_count = 32
+    for j in range(lamp_count):
+        ang = (j / lamp_count) * 2.0 * math.pi
+        wobble = 1.0 + 0.08 * math.sin(ang * 5.0 + t * 3.2) + 0.05 * math.cos(ang * 9.0 - t * 2.1)
+        lx = int(cx + math.cos(ang) * max_rx * wobble)
+        ly = int(cy + math.sin(ang) * max_ry * wobble)
+        pulse = 0.28 + 0.72 * max(0.0, math.sin(t * 4.2 - j * 0.73))
+        lamp_color = tuple(int(min(255, c * pulse * 1.18)) for c in saffron)
+        cv2.circle(lamp_glow, (lx, ly), max(2, int(9 * progress)), lamp_color, -1, cv2.LINE_AA)
+    diffuse = cv2.GaussianBlur(lamp_glow, (0, 0), sigmaX=max(2.0, 10.0 * progress))
+    cv2.addWeighted(frame, 1.0, diffuse, 0.42, 0, frame)
+
+    # Outer dark tar seepage halo with a faint warm edge.
     halo = frame.copy()
     cv2.fillPoly(halo, [pts_arr], (6, 5, 8))
-    cv2.polylines(halo, [pts_arr], True, (28, 26, 34), max(4, int(14 * progress)), cv2.LINE_AA)
+    cv2.polylines(halo, [pts_arr], True, (34, 18, 48), max(4, int(14 * progress)), cv2.LINE_AA)
     cv2.addWeighted(halo, 0.85, frame, 0.15, 0, frame)
 
     # Pitch-black meta-object core
     cv2.fillPoly(frame, [pts_arr], (2, 2, 3))
 
-    # Glossy wet glue/tar specular highlights along the rim
+    # Animated violet-purple LED beads, with a few pale glassy glints.
+    for j in range(lamp_count):
+        ang = (j / lamp_count) * 2.0 * math.pi
+        wobble = 1.0 + 0.08 * math.sin(ang * 5.0 + t * 3.2) + 0.05 * math.cos(ang * 9.0 - t * 2.1)
+        lx = int(cx + math.cos(ang) * max_rx * wobble)
+        ly = int(cy + math.sin(ang) * max_ry * wobble)
+        pulse = 0.36 + 0.64 * (0.5 + 0.5 * math.sin(t * 4.2 - j * 0.73))
+        color = tuple(int(min(255, c * pulse * 1.18)) for c in saffron)
+        cv2.circle(frame, (lx, ly), max(1, int(3.2 * progress)), color, -1, cv2.LINE_AA)
+
+    # High-speed charged particles: a luminous purple radiation trace skims the rim.
+    # Short fading dots make the motion legible without turning the hole into a solid neon ring.
+    orbit = np.zeros_like(frame)
+    cv2.ellipse(orbit, (cx, cy), (max(1, int(max_rx * 1.035)), max(1, int(max_ry * 1.06))),
+                0, 0, 360, (112, 42, 160), max(1, int(2.2 * progress)), cv2.LINE_AA)
+    cv2.addWeighted(frame, 1.0, cv2.GaussianBlur(orbit, (0, 0), sigmaX=5.0), 0.34, 0, frame)
+    for particle in range(3):
+        ang = t * 15.0 + particle * (2.0 * math.pi / 3.0)
+        px = int(cx + math.cos(ang) * max_rx * 1.035)
+        py = int(cy + math.sin(ang) * max_ry * 1.06)
+        for tail in range(1, 5):
+            ta = ang - tail * 0.055
+            tx = int(cx + math.cos(ta) * max_rx * 1.035)
+            ty = int(cy + math.sin(ta) * max_ry * 1.06)
+            alpha = (5 - tail) / 5.0
+            cv2.circle(frame, (tx, ty), max(1, int((4.5 - tail * 0.7) * progress)),
+                       (int(170 * alpha), int(82 * alpha), int(245 * alpha)), -1, cv2.LINE_AA)
+        cv2.circle(frame, (px, py), max(2, int(4.5 * progress)), (235, 192, 255), -1, cv2.LINE_AA)
+
+    # Glossy wet-glue detail catching the violet portal light.
     for i in range(0, num_pts, 4):
         ang = (i / num_pts) * 2.0 * math.pi
         if math.sin(ang * 2.0 + t * 1.5) > 0.2:
             hx = int(cx + math.cos(ang) * max_rx * 0.94)
             hy = int(cy + math.sin(ang) * max_ry * 0.94)
-            cv2.circle(frame, (hx, hy), max(1, int(3 * progress)), (95, 100, 115), -1, cv2.LINE_AA)
+            cv2.circle(frame, (hx, hy), max(1, int(2 * progress)), (208, 150, 235), -1, cv2.LINE_AA)
 
     # Sticky black gluey tendrils reaching inward/outward
     for k in range(10):
@@ -65,8 +113,10 @@ def draw_gluey_meta_hole(frame: np.ndarray, t: float, progress: float = 1.0,
         mx = (sx + ex) // 2 + int(12 * math.sin(t * 3.0 + k))
         my = (sy + ey) // 2 + int(10 * math.cos(t * 2.5 + k))
         strand = np.array([[sx, sy], [mx, my], [ex, ey]], np.int32)
-        cv2.polylines(frame, [strand], False, (12, 12, 16), max(2, int(5 * progress)), cv2.LINE_AA)
-        cv2.polylines(frame, [strand], False, (55, 58, 68), 1, cv2.LINE_AA)
+        if tendril_strength > 0.01:
+            thickness = max(1, int(5 * progress * tendril_strength))
+            cv2.polylines(frame, [strand], False, (12, 12, 16), thickness, cv2.LINE_AA)
+            cv2.polylines(frame, [strand], False, (55, 58, 68), 1, cv2.LINE_AA)
 
     return frame
 

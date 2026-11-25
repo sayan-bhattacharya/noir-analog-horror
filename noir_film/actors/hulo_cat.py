@@ -101,3 +101,46 @@ def draw_shadowy_figure(frame: np.ndarray,
 def draw_hulo_cat(*args, **kwargs):
     """Backward-compatible alias routing directly to draw_shadowy_figure."""
     return draw_shadowy_figure(*args, **kwargs)
+
+
+def draw_courtyard_cat(frame: np.ndarray, t: float, cx: int, ground_y: int,
+                       scale: float = 1.0, reveal: float = 0.0) -> np.ndarray:
+    """A low, cat-like courtyard silhouette; its brow sprouts withdraw as a third eye opens."""
+    s = max(0.1, scale)
+    ink = (5, 5, 8)
+    # Compact seated body, deliberately still against the human's movement.
+    cv2.ellipse(frame, (cx, ground_y - int(26*s)), (int(28*s), int(22*s)),
+                0, 0, 360, ink, -1, cv2.LINE_AA)
+    cv2.ellipse(frame, (cx, ground_y - int(57*s)), (int(23*s), int(27*s)),
+                0, 0, 360, ink, -1, cv2.LINE_AA)
+    ears = np.array([
+        [cx-int(22*s), ground_y-int(71*s)], [cx-int(19*s), ground_y-int(103*s)],
+        [cx-int(2*s), ground_y-int(81*s)], [cx+int(7*s), ground_y-int(82*s)],
+        [cx+int(24*s), ground_y-int(105*s)], [cx+int(25*s), ground_y-int(69*s)],
+    ], np.int32)
+    cv2.fillPoly(frame, [ears], ink, cv2.LINE_AA)
+    # Two dim eyes keep the familiar feline read without turning it cute.
+    eye_y = ground_y - int(58*s)
+    cv2.ellipse(frame, (cx-int(8*s), eye_y), (max(1,int(3*s)), max(1,int(2*s))), 0, 0, 360,
+                (70, 155, 175), -1, cv2.LINE_AA)
+    cv2.ellipse(frame, (cx+int(8*s), eye_y), (max(1,int(3*s)), max(1,int(2*s))), 0, 0, 360,
+                (70, 155, 175), -1, cv2.LINE_AA)
+    # Three thin brow filaments retract as the central eye is revealed.
+    retract = min(1.0, max(0.0, reveal))
+    for i, off in enumerate((-10, 0, 10)):
+        length = int((18 + 10*math.sin(t*2 + i)) * s * (1.0 - retract))
+        if length > 1:
+            cv2.line(frame, (cx+int(off*s), eye_y-int(10*s)),
+                     (cx+int(off*s), eye_y-int(10*s+length)), ink,
+                     max(1, int(2*s)), cv2.LINE_AA)
+    # The third eye starts as a dark lid, then opens to a small amber vertical pupil.
+    eye_cy = ground_y - int(73*s)
+    openness = min(1.0, max(0.0, (retract - 0.35) / 0.65))
+    cv2.ellipse(frame, (cx, eye_cy), (max(2,int(7*s)), max(1,int((1+5*openness)*s))),
+                0, 0, 360, (22, 20, 24), -1, cv2.LINE_AA)
+    if openness > 0.08:
+        cv2.ellipse(frame, (cx, eye_cy), (max(1,int(3*s)), max(1,int(4*openness*s))),
+                    0, 0, 360, (40, 160, 220), -1, cv2.LINE_AA)
+        cv2.line(frame, (cx, eye_cy-int(3*openness*s)),
+                 (cx, eye_cy+int(3*openness*s)), (8, 20, 35), max(1,int(s)), cv2.LINE_AA)
+    return frame

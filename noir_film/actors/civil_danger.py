@@ -1,16 +1,4 @@
-"""
-Civil Danger Warning Screen Actor for Project NOIR / Nishidak.
-Matches user reference Image 3:
-- Saturated blood-red CRT screen with phosphor scanlines and horizontal retrace lines
-- Stark, chilling Emergency Action Notification (EAS / civil defense) text centered:
-    CIVIL DANGER WARNING:
-    DO NOT LOOK AT THE SCREEN
-    DO NOT ANSWER THE CALLING
-- Bilingual Bengali typography:
-    নাগরিক বিপদ সতর্কতা:
-    টিভির পর্দায় তাকাবেন না
-- Subtle CRT phosphor breathing, scanline tear, and VCR distortion
-"""
+"""Bilingual civil-danger interruption with legible banded CRT graphics."""
 import math
 import cv2
 import numpy as np
@@ -18,72 +6,43 @@ from .. import text_overlay
 
 
 def draw_civil_danger_screen(frame: np.ndarray, t: float, sub_bass: float = 0.1) -> np.ndarray:
-    """Renders the stark saturated red civil danger warning screen."""
+    """Draw a blue checkered broadcast card with Bengali as the primary language."""
     h, w = frame.shape[:2]
+    pulse = 1.0 + 0.025 * math.sin(t * 7.5) + 0.035 * sub_bass
+    base = np.array([18, 13, 66], dtype=np.float32)  # BGR: deep broadcast blue
+    frame[:] = np.clip(base * pulse, 0, 255).astype(np.uint8)
 
-    # Blood-red CRT raster with subtle flicker
-    flicker = 1.0 + 0.04 * math.sin(t * 40.0) + 0.08 * sub_bass
-    r_val = int(np.clip(185 * flicker, 160, 245))
-    g_val = int(np.clip(16 * flicker, 10, 30))
-    b_val = int(np.clip(18 * flicker, 12, 35))
-    frame[:, :] = [b_val, g_val, r_val]
+    # Low-contrast checker texture; solid inset strips keep all copy readable.
+    cell = max(28, int(h * 0.075))
+    for y in range(0, h, cell):
+        for x in range(0, w, cell):
+            if ((x // cell) + (y // cell)) % 2 == 0:
+                cv2.rectangle(frame, (x, y), (min(w - 1, x + cell - 1), min(h - 1, y + cell - 1)), (24, 20, 88), -1)
+    cv2.rectangle(frame, (int(w * .055), int(h * .09)), (int(w * .945), int(h * .91)), (7, 9, 42), 2, cv2.LINE_AA)
 
-    # Horizontal CRT Retrace Grid Lines (Matching Image 3)
-    retrace_spacing = max(18, int(h * 0.075))
-    for y_retrace in range(int(h * 0.15), int(h * 0.85), retrace_spacing):
-        cv2.line(frame, (int(w * 0.08), y_retrace), (int(w * 0.92), y_retrace), (240, 240, 245), 1, cv2.LINE_AA)
+    bands = [(.18, .36), (.40, .58), (.62, .80)]
+    for y1, y2 in bands:
+        p1, p2 = (int(w * .09), int(h * y1)), (int(w * .91), int(h * y2))
+        cv2.rectangle(frame, p1, p2, (16, 23, 106), -1)
+        cv2.rectangle(frame, p1, p2, (150, 188, 237), 1, cv2.LINE_AA)
+        cv2.line(frame, (p1[0] + 7, p1[1] + 5), (p2[0] - 7, p1[1] + 5), (67, 91, 162), 1, cv2.LINE_AA)
 
-    # Vertical subtle sync grid line on left
-    grid_x = int(w * 0.22)
-    cv2.line(frame, (grid_x, int(h * 0.12)), (grid_x, int(h * 0.88)), (240, 240, 245), 1, cv2.LINE_AA)
-    cv2.line(frame, (grid_x + 16, int(h * 0.12)), (grid_x + 16, int(h * 0.88)), (240, 240, 245), 1, cv2.LINE_AA)
-
-    # Stark Monospaced Warning Text in English & Bengali
-    center_y = int(h * 0.44)
-    line_spacing = int(h * 0.068)
-
-    warning_lines_en = [
-        "CIVIL DANGER WARNING:",
-        "DO NOT LOOK AT THE SCREEN",
-        "DO NOT ANSWER THE CALLING"
+    # Bengali leads in scale and placement; English stays as a concise secondary caption.
+    lines = [
+        ("নাগরিক বিপদ সতর্কতা", "CIVIL DANGER WARNING"),
+        ("পর্দার দিকে তাকাবেন না", "DO NOT LOOK AT THE SCREEN"),
+        ("ডাকের উত্তর দেবেন না", "DO NOT ANSWER THE CALLING"),
     ]
+    for (bn, en), (y1, y2) in zip(lines, bands):
+        mid = int(h * (y1 + y2) * .5)
+        text_overlay.draw_text(frame, bn, (w // 2, mid - int(h * .024)),
+                               font_size=int(h * .052), fill_color=(255, 250, 231), anchor="mm",
+                               max_width=int(w * .78), with_shadow=True)
+        text_overlay.draw_text(frame, en, (w // 2, mid + int(h * .040)),
+                               font_size=int(h * .022), fill_color=(209, 223, 255), anchor="mm",
+                               max_width=int(w * .78), with_shadow=False)
 
-    for idx, line in enumerate(warning_lines_en):
-        y_pos = center_y - int(h * 0.10) + idx * line_spacing
-        text_overlay.draw_text(
-            frame, line,
-            (w // 2, y_pos),
-            font_size=int(h * 0.048),
-            fill_color=(255, 255, 255),
-            anchor="mm"
-        )
-
-    # Bengali civil warning text below
-    ben_y1 = center_y + int(h * 0.16)
-    ben_y2 = ben_y1 + int(h * 0.06)
-
-    text_overlay.draw_text(
-        frame, "নাগরিক বিপদ সতর্কতা:",
-        (w // 2, ben_y1),
-        font_size=int(h * 0.042),
-        fill_color=(255, 245, 245),
-        anchor="mm"
-    )
-    text_overlay.draw_text(
-        frame, "টিভির পর্দায় তাকাবেন না, ঘরের দরজা বন্ধ রাখুন",
-        (w // 2, ben_y2),
-        font_size=int(h * 0.034),
-        fill_color=(245, 220, 220),
-        anchor="mm"
-    )
-
-    # Telemetry code at bottom
-    text_overlay.draw_text(
-        frame, "[ EAN / SECTOR WEST BENGAL  •  TRANSMISSION SEVERED ]",
-        (w // 2, int(h * 0.88)),
-        font_size=int(h * 0.022),
-        fill_color=(255, 255, 255),
-        anchor="mm"
-    )
-
+    text_overlay.draw_text(frame, "EAN / WEST BENGAL  ·  TRANSMISSION SEVERED",
+                           (w // 2, int(h * .86)), font_size=int(h * .021),
+                           fill_color=(218, 226, 250), anchor="mm", with_shadow=False)
     return frame

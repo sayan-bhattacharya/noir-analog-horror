@@ -1,1 +1,0 @@
-"""Project NOIR utilities package."""

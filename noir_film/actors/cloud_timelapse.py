@@ -41,11 +41,14 @@ def _load_cached_frames():
     return _CACHED_FRAMES
 
 
-def get_sky_frame_at(t: float, width: int, height: int) -> np.ndarray:
-    """Returns the looped cloud time-lapse sky frame at timestamp t."""
+def get_sky_frame_at(t: float, width: int, height: int, speed: float = 1.0,
+                     reverse: bool = False, phase: float = 0.0) -> np.ndarray:
+    """Returns a speed-, direction-, and phase-controlled cloud-loop frame."""
     frames = _load_cached_frames()
     if frames and len(frames) > 0:
-        frame_idx = int((t * _FPS)) % len(frames)
+        frame_idx = int((phase + t * _FPS * max(0.01, speed))) % len(frames)
+        if reverse:
+            frame_idx = (-frame_idx) % len(frames)
         sky = frames[frame_idx]
         if sky.shape[1] != width or sky.shape[0] != height:
             sky = cv2.resize(sky, (width, height), interpolation=cv2.INTER_AREA)
@@ -62,14 +65,16 @@ def get_sky_frame_at(t: float, width: int, height: int) -> np.ndarray:
     return sky
 
 
-def composite_sky_timelapse_on_plate(plate: np.ndarray, t: float, sky_cutoff: float = 0.44) -> np.ndarray:
+def composite_sky_timelapse_on_plate(plate: np.ndarray, t: float, sky_cutoff: float = 0.44,
+                                     speed: float = 1.0, reverse: bool = False,
+                                     phase: float = 0.0) -> np.ndarray:
     """
     Locked-off camera time-lapse compositor:
     Keeps all foreground objects (hut, roof, bamboo fence, ground fog) completely still
     while replacing the upper sky region with the moving cloud time-lapse loop.
     """
     h, w = plate.shape[:2]
-    sky = get_sky_frame_at(t, w, h)
+    sky = get_sky_frame_at(t, w, h, speed=speed, reverse=reverse, phase=phase)
 
     # Vertical sky gradient mask: 1.0 at top sky, smoothly fading to 0.0 at horizon/roofline
     y_coords = np.linspace(0.0, 1.0, h, dtype=np.float32)[:, np.newaxis]
@@ -97,7 +102,7 @@ def render_cloud_timelapse_sky(frame: np.ndarray,
     """
     Renders full-screen photorealistic cloud time-lapse nocturnal sky across the moon.
     """
-    sky = get_sky_frame_at(t, width, height)
+    sky = get_sky_frame_at(t, width, height, speed=max(0.01, cloud_speed / 40.0))
     if np.mean(frame) < 15:
         frame[:] = sky
     else:

@@ -426,6 +426,38 @@ def draw_rule_card(frame: np.ndarray,
     return frame
 
 
+def draw_intercepted_question_signal(frame: np.ndarray, t: float) -> np.ndarray:
+    """A single crimson question mark carried by a clean Morse-style signal."""
+    h, w = frame.shape[:2]
+    frame[:] = (4, 4, 10)
+    # Quiet scanline field and signal baseline.
+    for y in range(0, h, max(4, h // 90)):
+        cv2.line(frame, (int(w * .12), y), (int(w * .88), y), (12, 8, 18), 1)
+    red = (235, 35, 28)  # RGB crimson in the rendered frame buffer
+    glow = frame.copy()
+    cy = int(h * .44)
+    text_overlay_size = int(h * .42)
+    draw_text(frame, "?", (w // 2, cy), font_size=text_overlay_size,
+              fill_color=red, anchor="mm", with_shadow=False)
+
+    # Morse question mark: ..--.. Each pulse sits on one shared carrier line.
+    unit = max(5, int(w * .012))
+    gap = max(4, unit)
+    pulse_units = [1, 1, 3, 3, 1, 1]
+    total = sum(pulse_units) * unit + (len(pulse_units) - 1) * gap
+    x = (w - total) // 2
+    baseline = int(h * .76)
+    cv2.line(frame, (int(w * .18), baseline), (int(w * .82), baseline), (45, 18, 38), 1, cv2.LINE_AA)
+    pulse = .72 + .28 * math.sin(t * 2 * math.pi * 1.6)
+    for length in pulse_units:
+        width = length * unit
+        y_top = baseline - (int(h * .11) if length == 3 else int(h * .06))
+        cv2.rectangle(frame, (x, y_top), (x + width, baseline), red, -1)
+        x += width + gap
+    cv2.addWeighted(frame, pulse, glow, 1.0 - pulse, 0, frame)
+    return frame
+
+
 def draw_emergency_banner(frame: np.ndarray,
                           text_bengali: str,
                           text_symbolic: str = "",
