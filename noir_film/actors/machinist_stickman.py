@@ -14,7 +14,8 @@ def draw_machinist_stickman(frame: np.ndarray,
                             t: float,
                             scale: float = 1.0,
                             walk_phase: float = 0.0,
-                            is_alert: bool = False) -> np.ndarray:
+                            is_alert: bool = False,
+                            smoking: bool = False) -> np.ndarray:
     """
     Draws the minimalist gaunt stick-man figure (Atandra / Machinist silhouette)
     standing or creeping near the tube-well / courtyard.
@@ -71,11 +72,31 @@ def draw_machinist_stickman(frame: np.ndarray,
     cv2.line(frame, (neck_x, neck_y + int(4 * s)), l_elbow, ink, max(2, int(4 * s)), cv2.LINE_AA)
     cv2.line(frame, l_elbow, l_hand, ink, max(1, int(3 * s)), cv2.LINE_AA)
 
-    # Right arm (reaching/twitching toward tube-well)
-    r_elbow = (neck_x + int(16 * s), neck_y + int(20 * s))
-    r_hand = (neck_x + int(22 * s + sway * 0.6), neck_y + int(48 * s))
+    # Right arm (reaching/twitching or raising cigarette to mouth)
+    if smoking:
+        puff_cycle = 0.5 + 0.5 * math.sin(t * 2.2)
+        r_elbow = (neck_x + int(15 * s), neck_y + int(16 * s - puff_cycle * 8 * s))
+        r_hand = (head_cx + int((14 - puff_cycle * 6) * s), head_cy + int((14 - puff_cycle * 10) * s))
+    else:
+        r_elbow = (neck_x + int(16 * s), neck_y + int(20 * s))
+        r_hand = (neck_x + int(22 * s + sway * 0.6), neck_y + int(48 * s))
     cv2.line(frame, (neck_x, neck_y + int(4 * s)), r_elbow, ink, max(2, int(4 * s)), cv2.LINE_AA)
     cv2.line(frame, r_elbow, r_hand, ink, max(1, int(3 * s)), cv2.LINE_AA)
+
+    if smoking:
+        # Lit cigarette + glowing orange ember + rising smoke wisps
+        cig_tip = (r_hand[0] + int(12 * s), r_hand[1] - int(3 * s))
+        cv2.line(frame, r_hand, cig_tip, (230, 230, 225), max(1, int(2 * s)), cv2.LINE_AA)
+        ember_pulse = 0.65 + 0.35 * math.sin(t * 9.0)
+        cv2.circle(frame, cig_tip, max(2, int(3 * s)), (int(255 * ember_pulse), int(95 * ember_pulse), 20), -1, cv2.LINE_AA)
+        smoke_overlay = frame.copy()
+        for k in range(5):
+            age = ((t * 1.4 + k * 0.28) % 1.4) / 1.4
+            sx = int(cig_tip[0] + math.sin(t * 3.0 + k) * (10 + age * 16) * s)
+            sy = int(cig_tip[1] - (8 + age * 54) * s)
+            sr = max(2, int((3 + age * 11) * s))
+            cv2.circle(smoke_overlay, (sx, sy), sr, (185, 190, 195), -1, cv2.LINE_AA)
+        cv2.addWeighted(smoke_overlay, 0.28, frame, 0.72, 0, frame)
 
     # Thin stick legs
     stride = math.sin(walk_phase) * 10.0 * s

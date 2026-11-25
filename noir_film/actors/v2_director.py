@@ -248,3 +248,169 @@ def draw_exit0_hud(frame: np.ndarray, t: float, width: int, height: int, show_an
             (width // 2, int(height * 0.88)),
             font_size=int(height * 0.032), fill_color=(240, 245, 235), anchor="mm"
         )
+
+
+def draw_opening_fictional_disclaimer(frame: np.ndarray, width: int, height: int):
+    """00:00 - 00:04 Crystal-clear opening fictional & statutory health notice."""
+    frame[:, :] = [8, 9, 12]
+    # Subtle warm gold frame border
+    pad_x, pad_y = int(width * 0.08), int(height * 0.12)
+    cv2.rectangle(frame, (pad_x, pad_y), (width - pad_x, height - pad_y), (175, 145, 55), 2)
+
+    text_overlay.draw_text(
+        frame, "DISCLAIMER  |  বিজ্ঞপ্তি",
+        (width // 2, int(height * 0.24)),
+        font_size=int(height * 0.042), fill_color=(245, 205, 55), anchor="mm"
+    )
+    text_overlay.draw_text(
+        frame, "All characters, events, and broadcasts in this film are purely fictional.",
+        (width // 2, int(height * 0.40)),
+        font_size=int(height * 0.030), fill_color=(242, 244, 248), anchor="mm"
+    )
+    text_overlay.draw_text(
+        frame, "এই চলচ্চিত্রের সমস্ত চরিত্র, ঘটনা ও সম্প্রচার সম্পূর্ণ কাল্পনিক।",
+        (width // 2, int(height * 0.50)),
+        font_size=int(height * 0.032), fill_color=(220, 230, 225), anchor="mm"
+    )
+    cv2.line(frame, (int(width * 0.22), int(height * 0.62)), (int(width * 0.78), int(height * 0.62)), (95, 95, 105), 1)
+    text_overlay.draw_text(
+        frame, "STATUTORY WARNING: SMOKING IS INJURIOUS TO HEALTH & CAUSES CANCER.",
+        (width // 2, int(height * 0.72)),
+        font_size=int(height * 0.023), fill_color=(235, 95, 90), anchor="mm"
+    )
+    text_overlay.draw_text(
+        frame, "বিধিবদ্ধ সতর্কীকরণ: ধূমপান স্বাস্থ্যের পক্ষে ক্ষতিকর ও ক্যান্সারের কারণ।",
+        (width // 2, int(height * 0.79)),
+        font_size=int(height * 0.025), fill_color=(235, 130, 120), anchor="mm"
+    )
+
+
+def draw_smoking_cancer_warning(frame: np.ndarray, width: int, height: int):
+    """Crisp statutory warning badge during smoking stick-figure scene."""
+    bx1, by1 = int(width * 0.56), int(height * 0.04)
+    bx2, by2 = int(width * 0.96), int(height * 0.13)
+    cv2.rectangle(frame, (bx1, by1), (bx2, by2), (14, 14, 18), -1)
+    cv2.rectangle(frame, (bx1, by1), (bx2, by2), (220, 65, 65), 2)
+    text_overlay.draw_text(
+        frame, "SMOKING CAUSES CANCER",
+        ((bx1 + bx2) // 2, by1 + int((by2 - by1) * 0.34)),
+        font_size=int(height * 0.021), fill_color=(250, 95, 90), anchor="mm"
+    )
+    text_overlay.draw_text(
+        frame, "ধূমপান ক্যান্সারের কারণ",
+        ((bx1 + bx2) // 2, by1 + int((by2 - by1) * 0.72)),
+        font_size=int(height * 0.022), fill_color=(242, 242, 242), anchor="mm"
+    )
+
+
+def draw_passing_bike_window_light(frame: np.ndarray, t: float, width: int, height: int,
+                                   gs_frame: np.ndarray = None):
+    """
+    Composites a passing motorbike headlight (from green-screen MP4 if provided,
+    or procedural volumetric cone) sweeping across the barred bedroom window on the left
+    (x: 0.05..0.24, y: 0.14..0.72) and casting sweeping bar-shadows into the room.
+    """
+    # Periodic pass every 5.5 seconds (fast 2.2s sweep across the window)
+    cycle = t % 5.5
+    if cycle > 2.4:
+        return
+
+    prog = cycle / 2.4  # 0.0 -> 1.0 as bike passes left-to-right outside window
+    overlay = np.zeros_like(frame, dtype=np.float32)
+
+    if gs_frame is not None:
+        # Chroma-key extract bright headlight & bike silhouette from green screen
+        r = gs_frame[:, :, 0].astype(np.int16)
+        g = gs_frame[:, :, 1].astype(np.int16)
+        b = gs_frame[:, :, 2].astype(np.int16)
+        is_green = (g > 150) & (g - r > 55) & (g - b > 55)
+        fg = gs_frame.astype(np.float32)
+        fg[is_green] = 0.0
+        # Mask strictly into the window glass opening behind the iron bars
+        win_mask = np.zeros((height, width), dtype=np.float32)
+        cv2.rectangle(win_mask, (int(width * 0.06), int(height * 0.16)),
+                      (int(width * 0.24), int(height * 0.71)), 1.0, -1)
+        win_mask = cv2.GaussianBlur(win_mask, (15, 15), 0)
+        # Preserve dark iron bars (low luminance pixels in original frame stay dark)
+        bar_keep = np.clip((frame.mean(axis=2).astype(np.float32) - 18.0) / 40.0, 0.15, 1.0)
+        alpha = win_mask * bar_keep
+        overlay += fg * alpha[:, :, None] * 0.92
+
+    # Sweeping warm-amber headlight beam spilling diagonally across wall & mosquito net
+    hx = int(width * (0.04 + prog * 0.22))
+    hy = int(height * 0.56)
+    beam_far_x = int(width * (0.35 + prog * 0.55))
+    beam_pts = np.array([
+        [hx, hy - int(height * 0.06)],
+        [hx, hy + int(height * 0.06)],
+        [beam_far_x, int(height * 0.88)],
+        [beam_far_x, int(height * 0.22)],
+    ], np.int32)
+    beam_layer = np.zeros_like(frame, dtype=np.float32)
+    cv2.fillPoly(beam_layer, [beam_pts], (255.0, 224.0, 145.0))
+    # Carve vertical iron window-bar shadows into the sweeping beam
+    for bar_x in np.linspace(0.08, 0.22, 6):
+        bx = int(width * bar_x)
+        dx_shadow = int((bx - hx) * 2.2)
+        cv2.line(beam_layer, (bx, int(height * 0.16)), (bx + dx_shadow + 140, int(height * 0.88)), (0.0, 0.0, 0.0), 10)
+    beam_layer = cv2.GaussianBlur(beam_layer, (31, 31), 0)
+
+    intensity = math.sin(prog * math.pi) * 0.42
+    combined = frame.astype(np.float32) + overlay + beam_layer * intensity
+    frame[:] = np.clip(combined, 0, 255).astype(np.uint8)
+
+
+def draw_courage_nowhere_vegetation(frame: np.ndarray, t: float, width: int, height: int,
+                                    stretch_factor: float = 0.0):
+    """
+    Courage the Cowardly Dog ('Nowhere') inspired eerie twilight backdrop:
+    giant luminous moon (with subtle Trinetra iris), rolling lonely hills,
+    gnarled dead/banyan silhouette, and wind-swept Bengal kash grass.
+    """
+    # 1. Giant uncanny full moon in upper-right sky
+    moon_x, moon_y = int(width * 0.72), int(height * 0.22)
+    moon_r = int(height * 0.13)
+    glow = frame.copy()
+    cv2.circle(glow, (moon_x, moon_y), int(moon_r * 1.75), (175, 168, 130), -1, cv2.LINE_AA)
+    cv2.addWeighted(glow, 0.18, frame, 0.82, 0, frame)
+    cv2.circle(frame, (moon_x, moon_y), moon_r, (238, 232, 205), -1, cv2.LINE_AA)
+    if stretch_factor > 0.25:
+        # Subtle uncanny Trinetra iris shadow inside the moon
+        iris_alpha = min(0.45, (stretch_factor - 0.25) * 0.6)
+        moon_ov = frame.copy()
+        cv2.circle(moon_ov, (moon_x, moon_y), int(moon_r * 0.42), (45, 22, 26), 2, cv2.LINE_AA)
+        cv2.circle(moon_ov, (moon_x, moon_y), int(moon_r * 0.16), (25, 14, 18), -1, cv2.LINE_AA)
+        cv2.addWeighted(moon_ov, iris_alpha, frame, 1.0 - iris_alpha, 0, frame)
+
+    # 2. Rolling lonely Nowhere twilight hills
+    hill_far = np.array([
+        [0, int(height * 0.66)],
+        [int(width * 0.22), int(height * 0.58)],
+        [int(width * 0.48), int(height * 0.64)],
+        [int(width * 0.76), int(height * 0.57)],
+        [width, int(height * 0.65)],
+        [width, height], [0, height]
+    ], np.int32)
+    cv2.fillPoly(frame, [hill_far], (22, 20, 30))
+
+    hill_near = np.array([
+        [0, int(height * 0.74)],
+        [int(width * 0.30), int(height * 0.70)],
+        [int(width * 0.68), int(height * 0.75)],
+        [width, int(height * 0.69)],
+        [width, height], [0, height]
+    ], np.int32)
+    cv2.fillPoly(frame, [hill_near], (14, 16, 14))
+
+    # 3. Gnarled crooked dead tree on the left (Courage silhouette)
+    tx, ty = int(width * 0.14), int(height * 0.74)
+    cv2.line(frame, (tx, ty + 40), (tx - 12, ty - 140), (8, 8, 12), 12, cv2.LINE_AA)
+    cv2.line(frame, (tx - 8, ty - 75), (tx - 65, ty - 135), (8, 8, 12), 6, cv2.LINE_AA)
+    cv2.line(frame, (tx - 10, ty - 110), (tx + 55, ty - 165), (8, 8, 12), 5, cv2.LINE_AA)
+
+    # 4. Wind-swept Bengal kash-grass & foreground weeds along bottom edge
+    for gx in range(0, width, 18):
+        sway = int(math.sin(t * 2.6 + gx * 0.04) * 14)
+        gh = 36 + (gx * 13) % 44
+        cv2.line(frame, (gx, height), (gx + sway, height - gh), (10, 12, 10), 2, cv2.LINE_AA)
+

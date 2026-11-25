@@ -255,8 +255,12 @@ class NoirTimeline:
         # =========================================================================
         # ACT I: THE EMERGENCY BROADCAST INTERRUPTION & ALERT (00:00 - 00:45)
         # =========================================================================
-        if t < 6.0:
-            # Shot 1: Between the Notes Station ID & Emergency Signal Override (6.0s - Emergency Broadcast)
+        if t < 3.5:
+            # Shot 0: Opening Fictional & Statutory Disclaimer (Crystal-Clear Readable Font)
+            v2_director.draw_opening_fictional_disclaimer(frame, width, height)
+
+        elif 3.5 <= t < 8.0:
+            # Shot 1: Between the Notes Station ID & Emergency Signal Override
             doordarshan_alert.draw_between_the_notes_logo(frame, width // 2, int(height * 0.32), radius=int(height * 0.12), t=t)
             text_overlay.draw_text(frame, "বিটুইন দ্য নোটস সম্প্রচার কেন্দ্র কলকাতা", (width // 2, int(height * 0.58)),
                                    font_size=int(height * 0.040), fill_color=(245, 205, 55), anchor="mm")
@@ -266,9 +270,9 @@ class NoirTimeline:
                                    font_size=int(height * 0.022), fill_color=(180, 215, 180), anchor="mm")
             v2_director.draw_crimson_point(frame, t, cx=int(width * 0.94), cy=int(height * 0.075), radius=4)
 
-        elif 6.0 <= t < 14.0:
-            # Shot 2: CH 03 Bengal Geography / BTN 24 News Broadcast (8.0s - Clean V2 Geography or Storm Loop)
-            st = t - 6.0
+        elif 8.0 <= t < 14.0:
+            # Shot 2: CH 03 Bengal Geography / BTN 24 News Broadcast (6.0s - Clean V2 Geography or Storm Loop)
+            st = t - 8.0
             geo_f = get_video_frame_at(os.path.join("assets", "v2_videos", "V2_01_bengal_geography.mp4"), st, width, height)
             storm_f = get_storm_frame_at(t, width, height)
             if geo_f is not None:
@@ -355,12 +359,17 @@ class NoirTimeline:
             v2_director.draw_channel_hud(frame, "CH 03 // FIELD CAM", t, color=(90, 235, 120), sub_label="NISTOBDHOPUR")
 
         elif 53.0 <= t < 60.0:
-            # Shot 9: Rule 1 Civil Defense Card (7.0s - Locked-off Sky Time-Lapse + Rule 1)
+            # Shot 9: Rule 1 Civil Defense Card + Walking & Smoking Machinist Stick-Man + Cancer Warning
             st = t - 53.0
             base_plate = self.get_plate("homestead", width, height)
             frame[:] = cloud_timelapse.composite_sky_timelapse_on_plate(base_plate, t, sky_cutoff=0.44)
             banana_trees.draw_banana_tree(frame, int(width * 0.88), height, t, scale=0.85)
-            machinist_stickman.draw_machinist_stickman(frame, int(width * 0.38), int(height * 0.72), t, scale=1.05, is_alert=(sub_bass > 0.30))
+            walk_x = int(width * (0.28 + st * 0.022))
+            machinist_stickman.draw_machinist_stickman(
+                frame, walk_x, int(height * 0.72), t, scale=1.05,
+                walk_phase=st * 3.2, is_alert=(sub_bass > 0.30), smoking=True
+            )
+            v2_director.draw_smoking_cancer_warning(frame, width, height)
             text_overlay.draw_rule_card(
                 frame, "[বিধি ১] (RULE 1)",
                 "রাত বারোটার পর কলাবাগান থেকে চেনা গলায় ডাকলেও দরজা খুলবেন না।",
@@ -423,9 +432,11 @@ class NoirTimeline:
         # ACT III: THE MOSQUITO NET METAMORPHOSIS (01:30 - 02:20)
         # =========================================================================
         elif 90.0 <= t < 97.0:
-            # Shot 15: CH 07 // BEDROOM CAM - Awakening to Nishir Daak inside Mosquito Net (7.0s)
+            # Shot 15: CH 07 // BEDROOM CAM - Awakening to Nishir Daak + Passing Bike Headlight Through Window
             st = t - 90.0
             frame[:] = zoom_pan(self.get_plate("bedroom", width, height), st, 7.0, 1.0, 1.06)
+            gs_f = get_video_frame_at(os.path.join("assets", "v2_videos", "bike_headlight_greenscreen.mp4"), st, width, height)
+            v2_director.draw_passing_bike_window_light(frame, t, width, height, gs_frame=gs_f)
             text_overlay.draw_text(frame, "CH 07 // BEDROOM CAM", (int(width * 0.04), int(height * 0.08)),
                                    font_size=int(height * 0.024), fill_color=(245, 70, 70), anchor="lm")
 
@@ -441,9 +452,11 @@ class NoirTimeline:
             )
 
         elif 104.0 <= t < 112.0:
-            # Shot 17: 1:49 MARK - TIGHTLY ENCLOSED MOSQUITO NET (Spooky sheer fabric cage)
+            # Shot 17: 1:49 MARK - TIGHTLY ENCLOSED MOSQUITO NET + Passing Bike Headlight
             st = t - 104.0
             frame[:] = zoom_pan(self.get_plate("bedroom", width, height), st, 8.0, 1.0, 1.06)
+            gs_f = get_video_frame_at(os.path.join("assets", "v2_videos", "bike_headlight_greenscreen.mp4"), st, width, height)
+            v2_director.draw_passing_bike_window_light(frame, t, width, height, gs_frame=gs_f)
             draw_enclosed_mosquito_net(frame, width, height, t)
 
         elif 112.0 <= t < 117.0:
@@ -527,12 +540,12 @@ class NoirTimeline:
             )
 
         elif 154.0 <= t < 162.0:
-            # Shot 24: 2:33 MARK - FULL-SCREEN NIGHT SKY CLOUD TIME-LAPSE & ELONGATING SHADOW COLUMN
+            # Shot 24: 2:33 MARK - COURAGE-STYLE TWILIGHT VEGETATION, GIANT MOON & ELONGATING HYPER-OBJECT
             st = t - 154.0
-            # Continuous multi-layered volumetric cloud time-lapse across the moon
-            cloud_timelapse.render_cloud_timelapse_sky(frame, t, width, height, cloud_speed=50.0)
-            banana_trees.draw_banana_tree(frame, int(width * 0.90), height, t, scale=0.85, wind_strength=0.7)
             stretch = min(1.0, st / 7.0)
+            cloud_timelapse.render_cloud_timelapse_sky(frame, t, width, height, cloud_speed=50.0)
+            v2_director.draw_courage_nowhere_vegetation(frame, t, width, height, stretch_factor=stretch)
+            banana_trees.draw_banana_tree(frame, int(width * 0.90), height, t, scale=0.85, wind_strength=0.7)
             hulo_cat.draw_shadowy_figure(frame, t, cx=int(width * 0.52), cy=int(height * 0.68), stretch_factor=stretch)
 
         elif 162.0 <= t < 169.0:
@@ -581,12 +594,32 @@ class NoirTimeline:
             )
 
         elif 193.0 <= t < 204.0:
-            # Shot 30: The Black Gluey Meta-Object Hole opens beneath him (11.0s)
+            # Shot 30: Confronting the Black Gluey Hole -> Pulled Spiraling Into the Abyss (11.0s)
             st = t - 193.0
             base_plate = self.get_plate("homestead", width, height)
             frame[:] = cloud_timelapse.composite_sky_timelapse_on_plate(base_plate, t, sky_cutoff=0.44)
-            hole_prog = min(1.0, st / 4.5)
+            hole_prog = min(1.0, st / 4.0)
             frame = descent_fall.draw_gluey_meta_hole(frame, t, progress=hole_prog, sub_bass=sub_bass)
+            hole_cx, hole_cy = width // 2, int(height * 0.66)
+            if st < 5.5:
+                # Stick-man walks up to the edge and confronts the black hole
+                walk_p = min(1.0, st / 4.0)
+                sx = int(width * (0.24 + 0.18 * walk_p))
+                sy = int(height * 0.70)
+                machinist_stickman.draw_machinist_stickman(
+                    frame, sx, sy, t, scale=0.95, walk_phase=st * 3.0 if st < 4.0 else 0.0, is_alert=(st >= 3.5)
+                )
+            else:
+                # Gravity fails: pulled into the black hole swirl seamlessly before Shot 31
+                pull = min(1.0, (st - 5.5) / 5.2)
+                angle = pull * math.pi * 4.5
+                rad = (1.0 - pull) * width * 0.14
+                sx = int(hole_cx + math.cos(angle) * rad)
+                sy = int(hole_cy + math.sin(angle) * rad * 0.45)
+                sc = max(0.18, 0.95 * (1.0 - pull * 0.82))
+                machinist_stickman.draw_machinist_stickman(
+                    frame, sx, sy, t, scale=sc, walk_phase=st * 6.0, is_alert=True
+                )
             text_overlay.draw_text(frame, "CH 07 // COURTYARD ANOMALY", (int(width * 0.04), int(height * 0.08)),
                                    font_size=int(height * 0.024), fill_color=(245, 70, 70), anchor="lm")
 
@@ -633,12 +666,14 @@ class NoirTimeline:
             tremor = math.sin(st * 16.0) * 0.015
             frame[:] = zoom_pan(base_net, st, 20.0, 1.0 + tremor, 1.14)
             draw_enclosed_mosquito_net(frame, width, height, t * 2.4)
-            machinist_stickman.draw_machinist_stickman(frame, width // 2, int(height * 0.62), t * 1.8, scale=1.35, is_alert=True)
+            machinist_stickman.draw_machinist_stickman(frame, width // 2, int(height * 0.62), t * 1.8, scale=1.35, walk_phase=st * 5.0, is_alert=True)
 
         elif 256.0 <= t < 280.0:
-            # Shot 35 (04:16 - 04:40): Through the Lens of the Protagonist (Half-Awake, Retrograde Amnesia)
+            # Shot 35 (04:16 - 04:40): Through the Lens of the Protagonist + Passing Bike Headlight
             st = t - 256.0
             frame[:] = zoom_pan(self.get_plate("bedroom", width, height), st, 24.0, 1.02, 1.08)
+            gs_f = get_video_frame_at(os.path.join("assets", "v2_videos", "bike_headlight_greenscreen.mp4"), st, width, height)
+            v2_director.draw_passing_bike_window_light(frame, t, width, height, gs_frame=gs_f)
             draw_enclosed_mosquito_net(frame, width, height, t)
 
             # Dreamy half-awake soft-focus blur + heavy eyelid blink vignette
@@ -718,7 +753,7 @@ class NoirTimeline:
         # =========================================================================
         # Check if frame is a high-readability text card, rule card, slate, or credits
         is_text_card = (
-            (t < 6.0) or
+            (t < 8.0) or
             (37.0 <= t < 45.0) or
             (53.0 <= t < 60.0) or
             (74.0 <= t < 80.0) or
