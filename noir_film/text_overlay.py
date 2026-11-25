@@ -453,20 +453,57 @@ def draw_emergency_banner(frame: np.ndarray,
     return frame
 
 
+_MEL_BG_CACHE = None
+
+
+def _get_mel_spectrogram_bg(w: int, h: int) -> np.ndarray:
+    global _MEL_BG_CACHE
+    root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    mel_path = os.path.join(root_dir, "assets", "noir_mel_spectrogram_bg.png")
+    if _MEL_BG_CACHE is None and os.path.exists(mel_path):
+        bgr = cv2.imread(mel_path)
+        if bgr is not None:
+            _MEL_BG_CACHE = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
+    if _MEL_BG_CACHE is not None:
+        if _MEL_BG_CACHE.shape[1] != w or _MEL_BG_CACHE.shape[0] != h:
+            return cv2.resize(_MEL_BG_CACHE, (w, h), interpolation=cv2.INTER_AREA)
+        return _MEL_BG_CACHE.copy()
+    return None
+
+
 def draw_minimal_end_credits(frame: np.ndarray, t: float = 0.0) -> np.ndarray:
     """
-    Renders pure, minimalist, elegant end credits for Project NOIR:
-    PRESENTED BY BETWEEN THE NOTES
-    AN ANALOG HORROR FILM
-    ORIGINAL SCORE & SOUND DESIGN: ATANDRA
-    VISUAL ENGINE & DIRECTION: SAYAN
-    IN CASE OF NISHIDAK: DO NOT ANSWER
+    Renders pure, minimalist, elegant end credits for Project NOIR // NISHIDAK
+    layered over the live Mel Spectrogram of Noir.wav + crimson laser-pointer playhead.
     """
     h, w = frame.shape[:2]
-    frame[:, :] = [6, 6, 8]
+    mel_bg = _get_mel_spectrogram_bg(w, h)
+    if mel_bg is not None:
+        frame[:] = mel_bg
+        # Crimson laser-pointer playhead sweeping smoothly across the spectrogram
+        lx = int(((t / 13.0) % 1.0) * w)
+        cv2.line(frame, (lx, 0), (lx, h), (185, 25, 30), 2)
+        cv2.circle(frame, (lx, int(h * 0.80)), 6, (255, 70, 70), -1, cv2.LINE_AA)
+        cv2.circle(frame, (lx, int(h * 0.80)), 2, (255, 235, 235), -1, cv2.LINE_AA)
+    else:
+        frame[:, :] = [6, 6, 8]
 
-    # Subtle vignette shadow
-    cv2.rectangle(frame, (20, 20), (w - 20, h - 20), (18, 16, 20), 1)
+    # Subtle vignette border
+    cv2.rectangle(frame, (20, 20), (w - 20, h - 20), (45, 35, 40), 1)
+
+    # All OpenCV vector shapes drawn BEFORE converting to PIL once
+    cx = w // 2
+    cy_logo = int(h * 0.16)
+    cv2.circle(frame, (cx, cy_logo), int(h * 0.05), (212, 175, 55), 2, cv2.LINE_AA)
+    cv2.circle(frame, (cx, cy_logo), int(h * 0.042), (120, 95, 35), 1, cv2.LINE_AA)
+
+    rule_y = int(h * 0.48)
+    cv2.line(frame, (cx - int(w * 0.18), rule_y), (cx + int(w * 0.18), rule_y), (140, 110, 120), 1)
+
+    warn_y = int(h * 0.86)
+    box_w = int(w * 0.44)
+    cv2.rectangle(frame, (cx - box_w // 2, warn_y - 16), (cx + box_w // 2, warn_y + 18), (18, 6, 8), -1)
+    cv2.rectangle(frame, (cx - box_w // 2, warn_y - 16), (cx + box_w // 2, warn_y + 18), (215, 45, 45), 1)
 
     pil_img = Image.fromarray(frame)
     draw = ImageDraw.Draw(pil_img)
@@ -478,44 +515,18 @@ def draw_minimal_end_credits(frame: np.ndarray, t: float = 0.0) -> np.ndarray:
     f_name = get_english_font(int(h * 0.038))
     f_warn = get_english_font(int(h * 0.026))
 
-    # Medallion graphic in gold/silver
-    cx = w // 2
-    cy_logo = int(h * 0.16)
-    cv2.circle(frame, (cx, cy_logo), int(h * 0.05), (190, 160, 50), 2)
-    cv2.circle(frame, (cx, cy_logo), int(h * 0.042), (90, 80, 30), 1)
+    def _txt_shadow(pos, s, font, fill):
+        draw.text((pos[0] + 2, pos[1] + 2), s, font=font, fill=(4, 4, 6), anchor="mm")
+        draw.text(pos, s, font=font, fill=fill, anchor="mm")
 
-    pil_img = Image.fromarray(frame)
-    draw = ImageDraw.Draw(pil_img)
-
-    # 1. Header: PRESENTED BY BETWEEN THE NOTES
-    draw.text((cx, int(h * 0.26)), "PRESENTED BY", font=f_pres, fill=(160, 160, 165), anchor="mm")
-    draw.text((cx, int(h * 0.33)), "BETWEEN THE NOTES", font=f_brand, fill=(245, 245, 250), anchor="mm")
-
-    # 2. Subtitle: AN ANALOG HORROR FILM
-    draw.text((cx, int(h * 0.42)), "AN ANALOG HORROR FILM", font=f_sub, fill=(185, 40, 40), anchor="mm")
-
-    # Thin dividing rule
-    rule_y = int(h * 0.48)
-    cv2.line(frame, (cx - int(w * 0.18), rule_y), (cx + int(w * 0.18), rule_y), (60, 55, 65), 1)
-    pil_img = Image.fromarray(frame)
-    draw = ImageDraw.Draw(pil_img)
-
-    # 3. Credits
-    draw.text((cx, int(h * 0.55)), "ORIGINAL SCORE & SOUND DESIGN", font=f_role, fill=(140, 140, 145), anchor="mm")
-    draw.text((cx, int(h * 0.60)), "ATANDRA", font=f_name, fill=(240, 240, 245), anchor="mm")
-
-    draw.text((cx, int(h * 0.69)), "VISUAL ENGINE & DIRECTION", font=f_role, fill=(140, 140, 145), anchor="mm")
-    draw.text((cx, int(h * 0.74)), "SAYAN", font=f_name, fill=(240, 240, 245), anchor="mm")
-
-    # 4. Terminal Warning Box
-    warn_y = int(h * 0.86)
-    box_w = int(w * 0.42)
-    cv2.rectangle(frame, (cx - box_w // 2, warn_y - 14), (cx + box_w // 2, warn_y + 16), (25, 10, 10), -1)
-    cv2.rectangle(frame, (cx - box_w // 2, warn_y - 14), (cx + box_w // 2, warn_y + 16), (195, 25, 25), 1)
-
-    pil_img = Image.fromarray(frame)
-    draw = ImageDraw.Draw(pil_img)
-    draw.text((cx, warn_y), "IN CASE OF NISHIDAK: DO NOT ANSWER", font=f_warn, fill=(245, 60, 60), anchor="mm")
+    _txt_shadow((cx, int(h * 0.26)), "PRESENTED BY", f_pres, (205, 205, 210))
+    _txt_shadow((cx, int(h * 0.33)), "BETWEEN THE NOTES", f_brand, (250, 245, 235))
+    _txt_shadow((cx, int(h * 0.42)), "NOIR // NISHIDAK  •  AN ANALOG HORROR FILM", f_sub, (240, 75, 75))
+    _txt_shadow((cx, int(h * 0.55)), "ORIGINAL SCORE & SOUND DESIGN", f_role, (195, 195, 205))
+    _txt_shadow((cx, int(h * 0.60)), "ATANDRA", f_name, (245, 245, 250))
+    _txt_shadow((cx, int(h * 0.69)), "VISUAL ENGINE & DIRECTION", f_role, (195, 195, 205))
+    _txt_shadow((cx, int(h * 0.74)), "SAYAN", f_name, (245, 245, 250))
+    _txt_shadow((cx, warn_y), "IN CASE OF NISHIDAK: DO NOT ANSWER", f_warn, (250, 75, 75))
 
     frame[:] = np.array(pil_img)
     return frame
