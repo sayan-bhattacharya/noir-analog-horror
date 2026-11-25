@@ -725,16 +725,24 @@ class NoirTimeline:
             v2_director.draw_exit0_hud(frame, t, width, height, show_anomaly_card=False)
 
         elif 338.0 <= t < 352.0:
-            # Shot 39 (05:38 - 05:52): 05:38 TRAIN HONK PEAK (0.821) -> The Haunted Train Arrives
+            # Shot 39 (05:38 - 05:52): 05:38 TRAIN HONK -> Brief 3.5s Warm-Sepia Dream Flash, then Cold Berlin Subway
             st = t - 338.0
-            train_f = get_video_frame_at(os.path.join("assets", "haunted_archive_videos", "F_pather_train_never_arrives.mp4"), st, width, height)
             metro_f = get_video_frame_at(os.path.join("assets", "stage2_videos", "S2_01_berlin_matrix_subway.mp4"), st + 12.0, width, height)
-            if train_f is not None and metro_f is not None:
-                frame[:] = cv2.addWeighted(metro_f, 0.38, train_f, 0.62, 0)
-            elif train_f is not None:
-                frame[:] = train_f
+            if st < 3.5:
+                # Brief warm old-day dream flash (3.5s max)
+                train_f = get_video_frame_at(os.path.join("assets", "haunted_archive_videos", "F_pather_train_never_arrives.mp4"), st, width, height)
+                if train_f is not None:
+                    # Warm golden-sepia dream tint ("warm old day")
+                    warm = train_f.astype(np.float32)
+                    warm[:, :, 0] = np.clip(warm[:, :, 0] * 1.15 + 14, 0, 255)
+                    warm[:, :, 1] = np.clip(warm[:, :, 1] * 1.04 + 6, 0, 255)
+                    warm[:, :, 2] = np.clip(warm[:, :, 2] * 0.82, 0, 255)
+                    warm_u8 = warm.astype(np.uint8)
+                    frame[:] = cv2.addWeighted(metro_f, 0.30, warm_u8, 0.70, 0) if metro_f is not None else warm_u8
+                elif metro_f is not None:
+                    frame[:] = metro_f
             else:
-                frame[:] = self.get_plate("aerial_crossroads", width, height)
+                frame[:] = metro_f if metro_f is not None else self.get_plate("aerial_crossroads", width, height)
             v2_director.draw_crimson_point(frame, t, cx=int(width * 0.94), cy=int(height * 0.075), radius=4)
 
         else:
