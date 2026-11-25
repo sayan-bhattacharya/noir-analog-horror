@@ -1,0 +1,20 @@
+# Local render products and caches
+__pycache__/
+**/__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+output/
+cache/
+noir_film/cache/
+output/**/*.mp4
+output/*.mp4
+noir_master_output.mp4
+noir_720p_story_preview.mp4
+*.partial.mp4
+*.tmp
+*.log
+
+# Non-NOIR podcast sample; the render requires the LFS-managed Noir.wav
+audio/BetweenTheNotes_Podcast_5min.wav

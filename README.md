@@ -1,136 +1,38 @@
-# PROJECT NOIR / NISHIDAK VISUAL ENGINE
-## নিশিডাক — THE NISHIDAK BROADCAST
+# Project NOIR ? Nishidak Broadcast
 
-A minimal, highly controllable, modular Python visual engine for the current 5:52 NOIR compositor workprint:
-**“নিশিডাক — THE NISHIDAK BROADCAST”**.
+This folder is the independent working copy of [`sayan-bhattacharya/noir-analog-horror`](https://github.com/sayan-bhattacharya/noir-analog-horror). It has its own Git history and remote. SHE belongs to the separate `aianimationautomate` repository; the two projects do not share code, assets, audio, render caches, or notebooks.
 
-Simulates a corrupted 1994 Doordarshan Kendra Calcutta (DD-1 Bangla) emergency transmission interrupted by cosmic, folk-horror signals from rural Bengal (Nistobdhopur).
+NOIR is an analog-horror visual engine inspired by a corrupted 1994 Doordarshan Kendra Calcutta transmission and folk-horror signals from rural Bengal. The full screenplay is about 30:22. The current Colab compositor renders a 5:52 (352-second) workprint, so the screenplay and rendered film are not yet the same duration.
 
-The separate master screenplay and `Noir.wav` score run 30:22; the current compositor timeline ends at 05:52. The Colab notebook renders the implemented workprint only and requires the original `Noir.wav` file (it never substitutes podcast audio).
+## Render profiles
 
----
+- **Colab notebook:** [`colab_noir_accelerator.ipynb`](colab_noir_accelerator.ipynb) renders the current 5:52 workprint at 1280?720, 24 fps. `RENDER_PREVIEW = True` selects a 640?360, 12 fps draft.
+- **Local Python CLI:** `config/global.yaml` currently sets a 360-second (6-minute) timeline at 1280?720, 24 fps. These profiles differ by eight seconds; check the timeline you intend to use before treating them as interchangeable.
+- **Soundtrack:** `Noir.wav`, stored with Git LFS. Do not substitute the unrelated podcast sample in `audio/`.
 
-## 1. Quickstart & Installation
+## Quick start
 
-```bash
-# Clone the repository
-git clone https://github.com/sayan-bhattacharya/noir-analog-horror.git
-cd noir-analog-horror
-
-# Install lightweight dependencies
-pip install -r requirements.txt
+```powershell
+git lfs install
+git lfs pull
+python -m pip install -r requirements.txt
+python -m noir_film.render_noir --quality final
 ```
 
----
+The local CLI writes its master under `output/`. A quick draft can be rendered with:
 
-## 2. Rendering CLI Commands
-
-### ⚡ Fast Low-Resolution Preview (All Scenes)
-```bash
+```powershell
 python -m noir_film.render_noir --preview
 ```
 
-### 🎬 Render Full 180-Second Master
-```bash
-python -m noir_film.render_noir --full
-```
+The Colab notebook can also retrieve `Noir.wav` through Git LFS, Google Drive, or a user upload. It explicitly rejects missing/short audio rather than replacing it.
 
-### 🔍 Render Individual Scene Only
-```bash
-# Scene 1: Doordarshan Signal Interrupt (00:00 - 00:15)
-python -m noir_film.render_noir --scene 1
+## Project layout
 
-# Scene 2: Nistobdhopur Solitary Homestead (00:15 - 00:35)
-python -m noir_film.render_noir --scene 2
+- `noir_film/`, `config/`: rendering engine and timeline configuration
+- `assets/`, `plates/`, `screenshots/`: NOIR-only image and video inputs
+- `screenplay/`, `storyboard_pipeline/`: narrative and storyboard materials
+- `output/`: generated renders, caches, and review artifacts; render MP4s and chunk caches are ignored by Git
+- `Noir.wav`: original score, tracked using Git LFS
 
-# Scene 3: The Mosquito Net Metamorphosis (00:35 - 01:05)
-python -m noir_film.render_noir --scene 3
-
-# Scene 4: The Fall & The Repeating Alarm (01:05 - 01:35)
-python -m noir_film.render_noir --scene 4
-
-# Scene 5: The Uncanny Feline (01:35 - 02:05)
-python -m noir_film.render_noir --scene 5
-
-# Scene 6: Tantric Cosmic Dread: The Celestial Eye (02:05 - 02:45)
-python -m noir_film.render_noir --scene 6
-
-# Scene 7: Terminal Carrier & Phosphor Decay (02:45 - 03:00)
-python -m noir_film.render_noir --scene 7
-```
-
-### ⚙️ Render from Custom Scene Config
-```bash
-python -m noir_film.render_noir --config config/scene_06_trinetra_cosmic.yaml
-```
-
-### 🔇 Silent Render (No Audio Sync)
-```bash
-python -m noir_film.render_noir --full --no-audio
-```
-
-### 💎 Final High-Resolution Export
-```bash
-python -m noir_film.render_noir --full --quality final
-```
-
----
-
-## 3. Directory Structure
-
-```text
-noir_film/
-├── config/
-│   ├── global.yaml
-│   ├── scene_01_signal_interrupt.yaml
-│   ├── scene_02_homestead_banana.yaml
-│   ├── scene_03_kafka_bedroom.yaml
-│   ├── scene_04_abyss_alarm.yaml
-│   ├── scene_05_hulo_cat.yaml
-│   ├── scene_06_trinetra_cosmic.yaml
-│   └── scene_07_cathode_collapse.yaml
-├── noir_film/
-│   ├── __init__.py
-│   ├── render_noir.py
-│   ├── timeline.py
-│   ├── audio_map.py
-│   ├── palette.py
-│   ├── crt.py
-│   ├── vhs.py
-│   ├── noise.py
-│   ├── distortion.py
-│   ├── cosmic.py
-│   ├── text_overlay.py
-│   ├── actors/
-│   │   ├── doordarshan_alert.py
-│   │   ├── banana_trees.py
-│   │   ├── bimal_metamorphosis.py
-│   │   ├── hulo_cat.py
-│   │   └── trinetra_eye.py
-│   └── utils/
-│       ├── easing.py
-│       ├── rng.py
-│       ├── video_io.py
-│       └── config_loader.py
-├── plates/
-│   ├── bengal_courage_homestead.jpg
-│   ├── moshari_bedroom_realistic.jpg
-│   └── bengal_cosmic_eye.jpg
-├── audio/
-│   └── Noir.wav
-├── output/
-├── requirements.txt
-├── README.md
-└── pyproject.toml
-```
-
----
-
-## 4. Hyperparameter Controls
-
-All visual and audio-reactive parameters are exposed in `config/global.yaml` and scene-specific YAML files:
-* **Broadcast Decay**: `barrel_distortion`, `scanline_strength`, `vignette_strength`, `chromatic_aberration_px`, `head_switching_band_px`
-* **Audio Reactivity**: `bass_to_zoom`, `bass_to_shake`, `bass_to_pupil_dilation`, `chime_to_flash`, `rms_to_grain`
-* **Atmosphere**: `wind_strength`, `banana_leaf_sway_amplitude`, `handpump_motion_amplitude`, `drip_interval_seconds`
-* **Body Horror Restraint**: `metamorphosis_progress`, `limb_count`, `limb_jitter_hz`, `cataract_glow_intensity`
-* **Cosmic Scaling**: `eye_scale`, `pupil_dilation_max`, `capillary_branch_density`
+Use this folder as the NOIR Git root (`git -C noir_film_project status`). The parent `between-the-notes` workspace also contains other projects, but do not commit NOIR files to the SHE repository.

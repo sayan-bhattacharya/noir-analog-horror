@@ -1,0 +1,18 @@
+scene_code: "ACT_04_ABYSS_ALARM"
+start_time: 65.0
+end_time: 95.0
+duration: 30.0
+
+parameters:
+  fall_acceleration_curve: 1.8
+  gravity_lattice_density: 12
+  void_depth: 0.95
+  static_shear_amount: 0.65
+  chime_flash_intensity: 0.85
+  chime_zoom_pulse: 0.35
+  bass_shake_strength: 0.55
+  bass_scanline_tear: 0.60
+  acceleration_exponent: 1.45
+  final_bass_pressure: 0.95
+  spiral_arms: 6
+  twist: 0.088
