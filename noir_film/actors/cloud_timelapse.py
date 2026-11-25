@@ -28,7 +28,7 @@ def _load_cached_frames():
             ret, f = cap.read()
             if not ret or f is None:
                 break
-            frames.append(f)
+            frames.append(cv2.cvtColor(f, cv2.COLOR_BGR2RGB))
         cap.release()
         if len(frames) > 0:
             _CACHED_FRAMES = frames

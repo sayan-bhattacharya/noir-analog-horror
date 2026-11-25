@@ -41,32 +41,37 @@ from .actors import descent_fall
 from .actors import machinist_stickman
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-_STORM_FRAMES = None
+_VIDEO_CACHE = {}
 
 
-def get_storm_frame_at(t: float, width: int, height: int) -> np.ndarray:
-    """Loads looping monsoon storm footage (assets/storm_loop.mp4) with zero baked-in text."""
-    global _STORM_FRAMES
-    if _STORM_FRAMES is None:
-        storm_path = os.path.join(ROOT, "assets", "storm_loop.mp4")
+def get_video_frame_at(rel_path: str, t: float, width: int, height: int) -> np.ndarray:
+    """Loads and loops any MP4 asset in assets/ at 24fps (returned in RGB)."""
+    if rel_path not in _VIDEO_CACHE:
+        full_path = os.path.join(ROOT, rel_path)
         frames = []
-        if os.path.exists(storm_path):
-            cap = cv2.VideoCapture(storm_path)
+        if os.path.exists(full_path):
+            cap = cv2.VideoCapture(full_path)
             while True:
                 ret, f = cap.read()
                 if not ret or f is None:
                     break
                 frames.append(cv2.cvtColor(f, cv2.COLOR_BGR2RGB))
             cap.release()
-        _STORM_FRAMES = frames
+        _VIDEO_CACHE[rel_path] = frames
 
-    if _STORM_FRAMES:
-        idx = int(t * 24.0) % len(_STORM_FRAMES)
-        f = _STORM_FRAMES[idx]
+    frames = _VIDEO_CACHE[rel_path]
+    if frames:
+        idx = int(t * 24.0) % len(frames)
+        f = frames[idx]
         if f.shape[1] != width or f.shape[0] != height:
             return cv2.resize(f, (width, height), interpolation=cv2.INTER_AREA)
         return f.copy()
     return None
+
+
+def get_storm_frame_at(t: float, width: int, height: int) -> np.ndarray:
+    """Loads looping Google Flow monsoon storm footage (assets/storm_loop.mp4)."""
+    return get_video_frame_at(os.path.join("assets", "storm_loop.mp4"), t, width, height)
 
 
 def apply_siren_beep_pulse(frame: np.ndarray, t: float, audio_features: dict) -> np.ndarray:
@@ -354,20 +359,23 @@ class NoirTimeline:
             )
 
         elif 60.0 <= t < 67.0:
-            # Shot 10: 1:00 - 1:07 MARK - Drone Aerial Angle + Close-up Cast-Iron Tube-Well Dripping Black Oil
+            # Shot 10: 1:00 - 1:07 MARK - Google Flow Drone Aerial Angle + Tube-Well Black Oil Close-Up
             st = t - 60.0
             if st < 3.5:
-                # Angle 1: Eerie Drone Aerial Sweep over Courtyard & Tube-Well + Machinist Stick-Man
-                drone_plate = self.get_plate("aerial_crossroads", width, height)
-                frame[:] = zoom_pan(drone_plate, st, 3.5, 1.0, 1.12, pan_x=-18, pan_y=-10)
+                # Angle 1: Google Flow Drone Aerial Sweep over Courtyard & Tube-Well + Machinist Stick-Man
+                drone_f = get_video_frame_at(os.path.join("assets", "flow_drone_courtyard.mp4"), st, width, height)
+                frame[:] = drone_f if drone_f is not None else zoom_pan(self.get_plate("aerial_crossroads", width, height), st, 3.5, 1.0, 1.12)
                 machinist_stickman.draw_machinist_stickman(frame, int(width * 0.32), int(height * 0.68), t, scale=0.85, walk_phase=st * 3.0, is_alert=True)
                 text_overlay.draw_text(frame, "CH 03 // DRONE CAM - COURTYARD", (int(width * 0.04), int(height * 0.08)),
                                        font_size=int(height * 0.022), fill_color=(90, 235, 120), anchor="lm")
             else:
-                # Angle 2: Close-Up Facing Tube-Well with Thick Black Oil Dripping
-                pump_plate = self.get_plate("rusted_handpump", width, height)
-                frame[:] = zoom_pan(pump_plate, st - 3.5, 3.5, 1.0, 1.08)
-                tubewell_scene.draw_oil_drip_closeup(frame, t, width, height)
+                # Angle 2: Google Flow Close-Up Facing Tube-Well Dripping Thick Black Oil
+                pump_f = get_video_frame_at(os.path.join("assets", "flow_closeup_tubewell.mp4"), st - 3.5, width, height)
+                if pump_f is not None:
+                    frame[:] = pump_f
+                else:
+                    frame[:] = zoom_pan(self.get_plate("rusted_handpump", width, height), st - 3.5, 3.5, 1.0, 1.08)
+                    tubewell_scene.draw_oil_drip_closeup(frame, t, width, height)
                 text_overlay.draw_text(frame, "CAM 02 // TUBE-WELL CLOSE-UP", (int(width * 0.04), int(height * 0.08)),
                                        font_size=int(height * 0.022), fill_color=(245, 70, 70), anchor="lm")
 
