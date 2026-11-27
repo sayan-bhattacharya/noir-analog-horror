@@ -75,3 +75,8 @@ Review model terms before using outputs in a monetized release. Text, logo, and 
 This package branch is based on the repository's tracked `main`; it does not yet contain the local-only `story_development/` production tree. The local tree is about 609 MB, `Noir.wav` is about 321 MB, and the two source clips `15002113_3840_2160_60fps.mp4` and `20200549-uhd_2160_3840_60fps.mp4` were not found. The existing 5-minute renders and Blender project assets in the current working copy are not automatically present in a fresh clone.
 
 Therefore this v01 clone is not yet a self-contained Blender render-and-stitch package. Do not start a full render from it expecting the missing files to be available. To finish that package, the production sources must be staged into the new repository/Lightning Drive, and the 50-shot list must be reconciled with the 18-card map. GPU use should be focused on Cycles Blender rendering and approved image generation; final frame conform and audio mux are separate FFmpeg steps. The current notebook does not run either the Blender or FFmpeg steps.
+
+## GPU access and execution
+
+Python cannot turn on a Lightning GPU or change the Studio machine type. First use the Studio hardware/environment selector to switch to a GPU and let the Studio restart. The notebook then initializes CUDA, selects visible GPU 0, reports the CUDA runtime and VRAM, and stops with instructions if CUDA is unavailable. It deliberately uses one GPU and one image at a time; extra GPUs will not speed up this notebook. A 24 GB L4 is the recommended fit. This uses GPU acceleration for SDXL still inference only; this v01 notebook does not render Blender scenes or assemble the film.
+

@@ -7,3 +7,4 @@
 - 2026-11-28: Added `storyboard_pipeline/NOIR_ASSET_AUDIT_v02.csv` (685-file updated local snapshot).
 - 2026-11-28: Added 10 versioned reference copies and 3 source copies under `storyboard_pipeline/lightning_noir_assets_v01/`, plus generation queue and SHA-256 provenance manifest. Original inputs were not edited.
 - 2026-11-28: Updated the Lightning setup/plan documents to state that the current notebook only generates still candidates, the active clone must remain untouched, and the full render package is not self-contained because local assets and two video sources are absent from GitHub main.
+- 2026-11-28: Updated the Lightning notebook GPU preflight to initialize CUDA, select visible GPU 0, report runtime/VRAM, and explain that hardware selection must be changed in Lightning Studio; updated setup guide.
