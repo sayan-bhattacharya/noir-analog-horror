@@ -1,0 +1,26 @@
+{
+  "project": "NOIR — Episode 0: The Broadcast Begins",
+  "format": "4:3 CRT inside 16:9 (1280x720 @ 24fps)",
+  "integration_plan": "Plan C — Broadcast Interruption",
+  "storyboard_studio_note": "Exported in Storyboard Reference Studio-compatible schema (local MCP not installed).",
+  "shots": [
+    {"ep0_id": "EP0_S01", "orig_id": "S01", "time": "00:00-00:08", "classification": "USE_INTERTITLE_CARD", "asset": "output/text_audit/card_0003s_station_id.png", "approval": "APPROVED_EXISTING"},
+    {"ep0_id": "EP0_S02", "orig_id": null, "time": "00:08-00:14", "classification": "USE_STOCK_FOOTAGE", "asset": "C:\\Users\\sayan\\Downloads\\15002113_3840_2160_60fps.mp4", "approval": "APPROVED_PLAN_C"},
+    {"ep0_id": "EP0_S03", "orig_id": null, "time": "00:14-00:18", "classification": "USE_STOCK_FOOTAGE", "asset": "C:\\Users\\sayan\\Downloads\\20200549-uhd_2160_3840_60fps.mp4", "approval": "APPROVED_PLAN_C"},
+    {"ep0_id": "EP0_S04", "orig_id": "S01", "time": "00:18-00:25", "classification": "USE_INTERTITLE_CARD", "asset": "assets/flow_storm_loop.mp4", "approval": "APPROVED_EXISTING"},
+    {"ep0_id": "EP0_S05", "orig_id": "S02", "time": "00:25-00:50", "classification": "REUSE_EXISTING_ASSET", "asset": "story_development/assets/ai_scenes/ai_01_awakening_match_strike_1795797440685.jpg", "approval": "APPROVED_EXISTING"},
+    {"ep0_id": "EP0_S06", "orig_id": "S03", "time": "00:50-01:15", "classification": "USE_INTERTITLE_CARD", "asset": "output/text_audit/card_0039s_dialogue1.png", "approval": "APPROVED_EXISTING"},
+    {"ep0_id": "EP0_S07", "orig_id": "S02", "time": "01:15-01:35", "classification": "USE_BLENDER_RENDER", "asset": "story_development/renders/bimal_utter_dark_candle_walk.mp4", "approval": "APPROVED_EXISTING"},
+    {"ep0_id": "EP0_S08", "orig_id": "S04", "time": "01:35-01:50", "classification": "REUSE_EXISTING_ASSET", "asset": "story_development/renders/concept_stills/concept_03_the_wall_insect.png", "approval": "APPROVED_EXISTING"},
+    {"ep0_id": "EP0_S09", "orig_id": "S05", "time": "01:50-02:05", "classification": "REUSE_EXISTING_ASSET", "asset": "story_development/assets/ai_scenes/ai_05_unplugged_crt_static_1795797434201.jpg", "approval": "APPROVED_EXISTING"},
+    {"ep0_id": "EP0_S10", "orig_id": "S06,S09", "time": "02:05-02:15", "classification": "REUSE_EXISTING_ASSET", "asset": "story_development/assets/ai_scenes/ai_07_bricked_east_door_1795797455331.jpg", "approval": "APPROVED_EXISTING"},
+    {"ep0_id": "EP0_S11", "orig_id": "S07,S08", "time": "02:15-02:35", "classification": "REUSE_EXISTING_ASSET", "asset": "story_development/assets/ai_scenes/ai_08_pukur_ghat_black_cat_1795797455068.jpg", "approval": "APPROVED_EXISTING"},
+    {"ep0_id": "EP0_S12", "orig_id": "S10", "time": "02:35-02:55", "classification": "REUSE_EXISTING_ASSET", "asset": "story_development/renders/concept_stills/concept_04_the_first_trinetra.png", "approval": "APPROVED_EXISTING"},
+    {"ep0_id": "EP0_S13", "orig_id": "S11,S12,S13", "time": "02:55-03:15", "classification": "REUSE_EXISTING_ASSET", "asset": "story_development/assets/ai_scenes/ai_09_clown_trickster_doorway_1795797464631.jpg", "approval": "APPROVED_EXISTING"},
+    {"ep0_id": "EP0_S14", "orig_id": "S14,S15", "time": "03:15-03:45", "classification": "USE_BLENDER_RENDER", "asset": "story_development/renders/concept_stills/concept_08_exit_0.png", "approval": "APPROVED_EXISTING"},
+    {"ep0_id": "EP0_S15", "orig_id": "S16,S17", "time": "03:45-04:15", "classification": "GENERATE_NEW_IMAGE", "asset": "story_development/output/nano_banana/EP0_S15_v01.png", "approval": "PENDING_NANO_BANANA"},
+    {"ep0_id": "EP0_S16", "orig_id": "S18,S19", "time": "04:15-04:30", "classification": "GENERATE_NEW_IMAGE", "asset": "story_development/output/nano_banana/EP0_S16_v01.png", "approval": "PENDING_NANO_BANANA"},
+    {"ep0_id": "EP0_S17", "orig_id": "S20,S21", "time": "04:30-04:45", "classification": "GENERATE_NEW_IMAGE", "asset": "story_development/output/nano_banana/EP0_S17_v01.png", "approval": "PENDING_NANO_BANANA"},
+    {"ep0_id": "EP0_S18", "orig_id": "S22,S23,S24", "time": "04:45-05:00", "classification": "REUSE_EXISTING_ASSET", "asset": "story_development/renders/concept_stills/concept_10_the_final_broadcast.png", "approval": "APPROVED_EXISTING"}
+  ]
+}

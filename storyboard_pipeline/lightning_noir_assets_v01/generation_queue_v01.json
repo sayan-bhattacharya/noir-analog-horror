@@ -1,0 +1,103 @@
+{
+  "queue_id": "NOIR_EP0_LIGHTNING_STILLS_v01",
+  "status": "PREPARED_NOT_SUBMITTED",
+  "target": {
+    "film": "NOIR — Episode 0: The Broadcast Begins",
+    "runtime": "5:00",
+    "frame": "4:3 archival image composed for a 16:9 master",
+    "candidate_resolution": "1024x768",
+    "fps": 24
+  },
+  "models": {
+    "base": "stabilityai/stable-diffusion-xl-base-1.0",
+    "inpaint": "diffusers/stable-diffusion-xl-1.0-inpainting-0.1",
+    "face_adapter_repo": "h94/IP-Adapter",
+    "face_adapter_subfolder": "sdxl_models",
+    "face_adapter_weight": "ip-adapter-plus-face_sdxl_vit-h.safetensors",
+    "notes": "Use SDXL plus the face-cropped IP-Adapter Plus variant for the Bimal anchor. The adapter encourages likeness; it is not an exact identity guarantee. Review every output."
+  },
+  "approval_rule": "Print this complete queue first. Require typed approval per batch. Maximum three image outputs per batch. Do not automatically run any batch.",
+  "batches": [
+    {
+      "batch_id": "B01",
+      "count": 1,
+      "depends_on": [],
+      "review_checkpoint": "Review the face, age, hair, goatee, and shirt against the existing Bimal references. Save a selected anchor manually before B02."
+    },
+    {
+      "batch_id": "B02",
+      "count": 3,
+      "depends_on": ["B01", "Bimal anchor selected"],
+      "review_checkpoint": "Review all repaired plates for text, icon/watermark artifacts, face continuity, and 4:3 composition. Keep outputs as candidates until manually selected."
+    }
+  ],
+  "jobs": [
+    {
+      "job_id": "BIMAL_FACE_ANCHOR",
+      "batch_id": "B01",
+      "mode": "text2img_with_face_adapter",
+      "reference_file": "references/bimal_face_reference_v01.jpg",
+      "face_crop_norm_xyxy": [0.55, 0.05, 0.69, 0.36],
+      "prompt": "[REFERENCE IMAGE: references/bimal_face_reference_v01.jpg, using the cropped face as the identity reference] Create a photorealistic character anchor portrait of the same fictional Bengali man. Keep his facial proportions, medium-brown skin tone, short slightly wavy black hair, close goatee, and tired observant brown eyes recognizably consistent with the reference; make him late 20s to early 30s, not middle-aged. Change only the framing into a quiet waist-up three-quarter portrait with relaxed shoulders and both hands visible. Wardrobe: plain charcoal heavy-metal T-shirt with no band name, lettering, or logo, and dark half-pants. Setting: lived-in 1990s Bengali bedroom with limewash, aged teak, and one candle far behind him. Camera: eye-level 50 mm portrait, natural perspective, face sharply focused. Lighting: restrained candle key with soft warm edge light and deep but readable shadows. Finish: realistic skin texture, subtle 1990s film grain and very light CRT transfer texture, not glossy beauty lighting. Composition: centered subject with head and hands inside safe margins. Aspect ratio 4:3. No other people, no supernatural features, no text, no logos, no watermark, no signature.",
+      "negative_prompt": "different face, older man, clean-shaven, full beard, long hair, heroic pose, fashion portrait, plastic skin, over-smoothed face, extra fingers, deformed hands, duplicate person, readable text, letters, brand logo, watermark, signature, extra eyes, gore",
+      "seed": 841302,
+      "width": 1024,
+      "height": 768,
+      "output_stem": "BIMAL_FACE_ANCHOR_candidate_v01"
+    },
+    {
+      "job_id": "NB001_EXIT0_CCTV_REPAIR",
+      "batch_id": "B02",
+      "mode": "inpaint_existing_candidate",
+      "reference_file": "references/EP0_S15_cctv_candidate_v01.png",
+      "layout_reference_file": "references/corridor_layout_reference_v01.png",
+      "mask_rects_norm_xyxy": [
+        [0.60, 0.06, 0.73, 0.16],
+        [0.42, 0.39, 0.61, 0.48],
+        [0.66, 0.80, 0.96, 0.95],
+        [0.92, 0.91, 0.99, 0.99]
+      ],
+      "prompt": "Repair only the white-mask regions of the supplied EXIT 0 CCTV image. Preserve all unmasked pixels and preserve Bimal's exact face, hair, goatee, body, pose, dark shirt, candle, corridor perspective, fluorescent lighting, monochrome grain, and framing. In the upper sign region, continue the dark sign material without any letters; the final EXIT 0 title will be typeset later. In the shirt region, continue plain charcoal fabric with no band text or logo. In the lower-right region, continue the existing dark floor/grain with no timestamp. In the corner region, continue the image texture with no sparkle, badge, symbol, or watermark. Keep the image realistic and restrained, 4:3.",
+      "negative_prompt": "letters, words, numbers, timestamp, EXIT lettering, logo, star, sparkle, watermark, signature, changed face, different person, new props, new doors, extra limbs, bright color, CGI gloss, gore",
+      "seed": 841315,
+      "width": 1200,
+      "height": 896,
+      "output_stem": "EP0_S15_CCTV_v02_candidate"
+    },
+    {
+      "job_id": "NB002_HYPEROBJECT_REPAIR",
+      "batch_id": "B02",
+      "mode": "inpaint_existing_candidate",
+      "reference_file": "references/EP0_S16_hyperobject_candidate_v01.png",
+      "layout_reference_file": "references/kalo_hulo_reference_v01.jpg",
+      "identity_reference_file": "references/trinetra_reference_v01.jpg",
+      "mask_rects_norm_xyxy": [
+        [0.92, 0.91, 0.99, 0.99]
+      ],
+      "prompt": "Repair only the white-mask region of the supplied cosmic Bengal image. Preserve every unmasked pixel: the pond ghat, palms, rooftops, giant gaunt black-cat silhouette, one single crimson geometric eye, and the wireframe polytope. Fill the masked corner with a natural continuation of the dark pond and analog image grain. No new shape, glint, star, icon, lettering, signature, or watermark. Keep the existing restrained night palette and 4:3 composition.",
+      "negative_prompt": "second eye, extra eye, star, sparkle, icon, badge, letters, text, watermark, signature, cartoon, neon rainbow, bright pink wash, new creature, changed cat silhouette, changed eye geometry, gore",
+      "seed": 841316,
+      "width": 1200,
+      "height": 896,
+      "output_stem": "EP0_S16_HYPEROBJECT_v02_candidate"
+    },
+    {
+      "job_id": "NB003_MASTER_CONTROL_REPAIR",
+      "batch_id": "B02",
+      "mode": "inpaint_existing_candidate",
+      "reference_file": "references/EP0_S17_master_control_candidate_v01.png",
+      "layout_reference_file": "references/master_control_layout_reference_v01.png",
+      "identity_reference_file": "references/bimal_face_reference_v01.jpg",
+      "mask_rects_norm_xyxy": [
+        [0.38, 0.46, 0.63, 0.62],
+        [0.92, 0.91, 0.99, 0.99]
+      ],
+      "prompt": "Repair only the white-mask regions of the supplied Master Control still. Preserve all unmasked pixels, Bimal's back-facing silhouette and body, the exact curved wall of boxy 1990s CRT monitors, the candlelit Bengali bedroom on the center monitor, black-and-white road monitors on the sides, red phosphor dots, scanlines, and overall 4:3 composition. Replace the shirt branding with plain charcoal fabric. Replace the lower-right sparkle with a seamless continuation of the dark image texture. Do not add lettering or graphics; station IDs and REC text will be composited later.",
+      "negative_prompt": "band name, readable text, letters, logo, star, sparkle, icon, watermark, signature, flat-screen LCD, LED strips, cyberpunk neon, changed body, changed monitors, extra people, gore",
+      "seed": 841317,
+      "width": 1200,
+      "height": 896,
+      "output_stem": "EP0_S17_MASTER_CONTROL_v02_candidate"
+    }
+  ]
+}
